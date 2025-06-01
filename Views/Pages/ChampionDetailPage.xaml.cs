@@ -10,7 +10,7 @@ namespace skinhunter.Views.Pages
         public ChampionDetailPage(ChampionDetailPageViewModel viewModel)
         {
             ViewModel = viewModel;
-            DataContext = this;
+            DataContext = ViewModel;
             InitializeComponent();
         }
     }

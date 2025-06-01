@@ -10,7 +10,6 @@ using System.Diagnostics;
 using System.Windows.Threading;
 using Wpf.Ui.Abstractions.Controls;
 
-
 namespace skinhunter.ViewModels.Pages
 {
     public partial class ChampionGridPageViewModel : ViewModelBase, INavigationAware
@@ -50,6 +49,10 @@ namespace skinhunter.ViewModels.Pages
             return Task.CompletedTask;
         }
 
+        public void OnNavigatedTo(object? parameter)
+        {
+        }
+
         public void ReleaseResourcesForTray()
         {
             IsLoading = true;
@@ -66,7 +69,6 @@ namespace skinhunter.ViewModels.Pages
             }
             IsLoading = false;
         }
-
 
         partial void OnSearchTextChanged(string? value)
         {
@@ -113,7 +115,6 @@ namespace skinhunter.ViewModels.Pages
             }
 
             var sortedRoles = uniqueRoles.OrderBy(r => r).ToList();
-            string? currentSelection = SelectedRole;
 
             System.Windows.Application.Current?.Dispatcher.Invoke(() => {
                 string? actualCurrentSelection = SelectedRole;
@@ -127,11 +128,11 @@ namespace skinhunter.ViewModels.Pages
 
                 if (!string.IsNullOrEmpty(actualCurrentSelection) && AllRoles.Contains(actualCurrentSelection))
                 {
-                    if (SelectedRole != actualCurrentSelection) SelectedRole = actualCurrentSelection;
+                    SelectedRole = actualCurrentSelection;
                 }
                 else
                 {
-                    if (SelectedRole != "All") SelectedRole = "All";
+                    SelectedRole = "All";
                 }
             });
         }
@@ -182,7 +183,12 @@ namespace skinhunter.ViewModels.Pages
         {
             if (champion != null)
             {
+                Debug.WriteLine($"[ChampionGridPageViewModel.SelectChampion] Champion ID: {champion.Id}, Name: {champion.Name}");
                 _customNavigationService.NavigateToChampionDetail(champion.Id);
+            }
+            else
+            {
+                Debug.WriteLine("[ChampionGridPageViewModel.SelectChampion] Champion object was null.");
             }
         }
     }

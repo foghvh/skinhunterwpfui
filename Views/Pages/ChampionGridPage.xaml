@@ -10,92 +10,88 @@
     xmlns:converters="clr-namespace:skinhunter.Converters"
     mc:Ignorable="d"
     d:DataContext="{d:DesignInstance Type=vm:ChampionGridPageViewModel, IsDesignTimeCreatable=False}"
-    ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
-    ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-    Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+    ScrollViewer.VerticalScrollBarVisibility="Auto">
     <Page.Resources>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <Style TargetType="ui:TextBox">
+        <Style TargetType="ui:TextBox" BasedOn="{StaticResource {x:Type ui:TextBox}}">
             <Setter Property="MinWidth" Value="250"/>
             <Setter Property="Margin" Value="0,0,15,0"/>
-            <Setter Property="Height" Value="32"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
-        <Style TargetType="ComboBox">
+        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="MinWidth" Value="150"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Height" Value="32"/>
-        </Style>
-        <Style x:Key="ChampionGridButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Margin" Value="4"/>
-            <Setter Property="Width" Value="100"/>
-            <Setter Property="Height" Value="110"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Height="110" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="3">
-                            <ContentPresenter/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Height" Value="36"/>
         </Style>
     </Page.Resources>
-    <Grid>
+    <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,15,0,10">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
             <ui:TextBox PlaceholderText="Search Champions..."
-                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                        Text="{Binding ViewModel.SearchText, UpdateSourceTrigger=PropertyChanged}">
+                <ui:TextBox.Icon>
+                    <ui:SymbolIcon Symbol="Search24" />
+                </ui:TextBox.Icon>
+            </ui:TextBox>
 
-            <TextBlock Text="Role:" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-            <ComboBox ItemsSource="{Binding AllRoles}"
-                       SelectedItem="{Binding SelectedRole, Mode=TwoWay}"/>
+            <TextBlock Text="Role:" VerticalAlignment="Center" Margin="20,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+            <ComboBox ItemsSource="{Binding ViewModel.AllRoles}" 
+                      SelectedItem="{Binding ViewModel.SelectedRole, Mode=TwoWay}"/>
         </StackPanel>
 
-        <ItemsControl Grid.Row="1" ItemsSource="{Binding ChampionsView}"
-                      VirtualizingPanel.IsVirtualizing="True"
-                      VirtualizingPanel.VirtualizationMode="Recycling"
-                      ScrollViewer.CanContentScroll="True"
-                      HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5,0,5,5">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <WrapPanel Orientation="Horizontal"/>
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="{x:Type m:ChampionSummary}">
-                    <Button Style="{StaticResource ChampionGridButtonStyle}"
-                            Command="{Binding DataContext.SelectChampionCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                            CommandParameter="{Binding}">
-                        <StackPanel Orientation="Vertical" Width="90" HorizontalAlignment="Center">
-                            <Border Width="80" Height="80" CornerRadius="3" Margin="0,5,0,5" ClipToBounds="True">
-                                <Image Source="{Binding ChampionImageSource}" Stretch="Uniform" 
-                                       RenderOptions.BitmapScalingMode="HighQuality"/>
-                            </Border>
-                            <TextBlock Text="{Binding Name}" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="12" 
-                                       TextTrimming="CharacterEllipsis" TextAlignment="Center" Margin="0,0,0,5"/>
-                        </StackPanel>
-                    </Button>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+        <Grid Grid.Row="1">
+            <ui:ProgressRing IsIndeterminate="True" HorizontalAlignment="Center" VerticalAlignment="Center"
+                             Visibility="{Binding ViewModel.IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}" />
 
-        <ui:ProgressRing Grid.Row="1" IsIndeterminate="True" HorizontalAlignment="Center" VerticalAlignment="Center"
-                         Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}" />
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                          Visibility="{Binding ViewModel.IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverse, FallbackValue=Visible}">
+                <ItemsControl ItemsSource="{Binding ViewModel.ChampionsView}"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              HorizontalAlignment="Stretch" VerticalAlignment="Top">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type m:ChampionSummary}">
+                            <ui:CardAction
+                                    Padding="0" Margin="8" Width="120" Height="160"
+                                    HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                                    Background="Transparent" BorderThickness="1"
+                                    IsChevronVisible="False" 
+                                    Cursor="Hand"
+                                    BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                                    Command="{Binding DataContext.ViewModel.SelectChampionCommand, RelativeSource={RelativeSource AncestorType={x:Type Page}}}"
+                                    CommandParameter="{Binding}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Border CornerRadius="5,5,0,0" Background="{DynamicResource ControlFillColorInputActiveBrush}">
+                                        <Image Source="{Binding ChampionImageSource}" Stretch="Uniform" Margin="5"
+                                                   RenderOptions.BitmapScalingMode="Fant"/>
+                                    </Border>
+                                    <Border Grid.Row="1" Padding="8,6" Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="0,0,5,5">
+                                        <TextBlock Text="{Binding Name}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="13" FontWeight="Medium"
+                                                   TextTrimming="CharacterEllipsis" TextAlignment="Center"/>
+                                    </Border>
+                                </Grid>
+                            </ui:CardAction>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </Page>

@@ -64,6 +64,7 @@ C:\Users\dev\source\repos\skinhunter\obj\Debug\net9.0-windows\skinhunter.Generat
 C:\Users\dev\source\repos\skinhunter\obj\Debug\net9.0-windows\skinhunter.AssemblyInfoInputs.cache
 C:\Users\dev\source\repos\skinhunter\obj\Debug\net9.0-windows\skinhunter.AssemblyInfo.cs
 C:\Users\dev\source\repos\skinhunter\obj\Debug\net9.0-windows\skinhunter.csproj.CoreCompileInputs.cache
+C:\Users\dev\source\repos\skinhunter\obj\Debug\net9.0-windows\skinhunter.sourcelink.json
 C:\Users\dev\source\repos\skinhunter\obj\Debug\net9.0-windows\skinhunter.csproj.Up2Date
 C:\Users\dev\source\repos\skinhunter\obj\Debug\net9.0-windows\skinhunter.dll
 C:\Users\dev\source\repos\skinhunter\obj\Debug\net9.0-windows\refint\skinhunter.dll

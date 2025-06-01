@@ -7,7 +7,7 @@ using Wpf.Ui;
 using skinhunter.ViewModels.Windows;
 using skinhunter.ViewModels.Dialogs;
 using skinhunter.Views.Pages;
-// No es necesario Wpf.Ui.Controls si no se interactúa directamente con INavigationView aquí
+using System.Diagnostics;
 
 namespace skinhunter.Services
 {
@@ -19,7 +19,7 @@ namespace skinhunter.Services
         void CloseDialog();
         void CloseOmnisearchDialog();
         void GoBack();
-        // Ya no se necesita GetAndConsumeLastNavigationParameter
+        object? ConsumeNavigationParameter(); // Nuevo método
     }
 
     public class CustomNavigationService : ICustomNavigationService
@@ -27,6 +27,7 @@ namespace skinhunter.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly INavigationService _wpfUiNavigationService;
         private MainWindowViewModel? _mainWindowViewModelCache;
+        private object? _pendingNavigationParameter; // Para retener el parámetro
 
         public CustomNavigationService(IServiceProvider serviceProvider, INavigationService wpfUiNavigationService)
         {
@@ -38,7 +39,18 @@ namespace skinhunter.Services
 
         public void NavigateToChampionDetail(int championId)
         {
-            _wpfUiNavigationService.Navigate(typeof(ChampionDetailPage), championId);
+            Debug.WriteLine($"[CustomNavigationService.NavigateToChampionDetail] Storing parameter: {championId} and navigating to ChampionDetailPage");
+            _pendingNavigationParameter = championId; // Almacena el parámetro ANTES de navegar
+            _wpfUiNavigationService.Navigate(typeof(ChampionDetailPage)); // Navega SIN el parámetro aquí
+        }
+
+        // El ViewModel de destino llamará a esto para obtener el parámetro
+        public object? ConsumeNavigationParameter()
+        {
+            var parameter = _pendingNavigationParameter;
+            _pendingNavigationParameter = null; // Limpiar después de consumir
+            Debug.WriteLine($"[CustomNavigationService.ConsumeNavigationParameter] Parameter consumed: {parameter}");
+            return parameter;
         }
 
         public void ShowSkinDetailDialog(Skin skin)
@@ -78,7 +90,7 @@ namespace skinhunter.Services
                 CloseOmnisearchDialog();
                 return;
             }
-            _wpfUiNavigationService.GoBack(); // Usar directamente el método de la interfaz
+            _wpfUiNavigationService.GoBack();
         }
     }
 }

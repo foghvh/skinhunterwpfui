@@ -3,6 +3,34 @@
   "WorkspaceRootPath": "C:\\Users\\dev\\source\\repos\\skinhunter\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|c:\\users\\dev\\source\\repos\\skinhunter\\services\\customnavigationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|solutionrelative:services\\customnavigationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|c:\\users\\dev\\source\\repos\\skinhunter\\viewmodels\\pages\\championdetailpageviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|solutionrelative:viewmodels\\pages\\championdetailpageviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|c:\\users\\dev\\source\\repos\\skinhunter\\viewmodels\\pages\\championgridpageviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|solutionrelative:viewmodels\\pages\\championgridpageviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|c:\\users\\dev\\source\\repos\\skinhunter\\views\\pages\\championdetailpage.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|solutionrelative:views\\pages\\championdetailpage.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|c:\\users\\dev\\source\\repos\\skinhunter\\views\\pages\\championdetailpage.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|solutionrelative:views\\pages\\championdetailpage.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|c:\\users\\dev\\source\\repos\\skinhunter\\views\\pages\\championgridpage.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|solutionrelative:views\\pages\\championgridpage.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|c:\\users\\dev\\source\\repos\\skinhunter\\views\\pages\\championgridpage.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|solutionrelative:views\\pages\\championgridpage.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|c:\\users\\dev\\source\\repos\\skinhunter\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|solutionrelative:app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -26,11 +54,100 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "ChampionGridPageViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\dev\\source\\repos\\skinhunter\\ViewModels\\Pages\\ChampionGridPageViewModel.cs",
+              "RelativeDocumentMoniker": "ViewModels\\Pages\\ChampionGridPageViewModel.cs",
+              "ToolTip": "C:\\Users\\dev\\source\\repos\\skinhunter\\ViewModels\\Pages\\ChampionGridPageViewModel.cs",
+              "RelativeToolTip": "ViewModels\\Pages\\ChampionGridPageViewModel.cs",
+              "ViewState": "AgIAAJkAAAAAAAAAAAAswMIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-01T17:30:00.75Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "CustomNavigationService.cs",
+              "DocumentMoniker": "C:\\Users\\dev\\source\\repos\\skinhunter\\Services\\CustomNavigationService.cs",
+              "RelativeDocumentMoniker": "Services\\CustomNavigationService.cs",
+              "ToolTip": "C:\\Users\\dev\\source\\repos\\skinhunter\\Services\\CustomNavigationService.cs",
+              "RelativeToolTip": "Services\\CustomNavigationService.cs",
+              "ViewState": "AgIAADYAAAAAAAAAAAAswF8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-01T17:29:43.582Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "ChampionDetailPageViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\dev\\source\\repos\\skinhunter\\ViewModels\\Pages\\ChampionDetailPageViewModel.cs",
+              "RelativeDocumentMoniker": "ViewModels\\Pages\\ChampionDetailPageViewModel.cs",
+              "ToolTip": "C:\\Users\\dev\\source\\repos\\skinhunter\\ViewModels\\Pages\\ChampionDetailPageViewModel.cs",
+              "RelativeToolTip": "ViewModels\\Pages\\ChampionDetailPageViewModel.cs",
+              "ViewState": "AgIAAEkAAAAAAAAAAAAswHIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-01T17:06:39.905Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ChampionDetailPage.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\dev\\source\\repos\\skinhunter\\Views\\Pages\\ChampionDetailPage.xaml.cs",
+              "RelativeDocumentMoniker": "Views\\Pages\\ChampionDetailPage.xaml.cs",
+              "ToolTip": "C:\\Users\\dev\\source\\repos\\skinhunter\\Views\\Pages\\ChampionDetailPage.xaml.cs",
+              "RelativeToolTip": "Views\\Pages\\ChampionDetailPage.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-01T16:56:30.671Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ChampionGridPage.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\dev\\source\\repos\\skinhunter\\Views\\Pages\\ChampionGridPage.xaml.cs",
+              "RelativeDocumentMoniker": "Views\\Pages\\ChampionGridPage.xaml.cs",
+              "ToolTip": "C:\\Users\\dev\\source\\repos\\skinhunter\\Views\\Pages\\ChampionGridPage.xaml.cs",
+              "RelativeToolTip": "Views\\Pages\\ChampionGridPage.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-01T16:39:26.017Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "ChampionGridPage.xaml",
+              "DocumentMoniker": "C:\\Users\\dev\\source\\repos\\skinhunter\\Views\\Pages\\ChampionGridPage.xaml",
+              "RelativeDocumentMoniker": "Views\\Pages\\ChampionGridPage.xaml",
+              "ToolTip": "C:\\Users\\dev\\source\\repos\\skinhunter\\Views\\Pages\\ChampionGridPage.xaml",
+              "RelativeToolTip": "Views\\Pages\\ChampionGridPage.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-06-01T16:18:53.254Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ChampionDetailPage.xaml",
+              "DocumentMoniker": "C:\\Users\\dev\\source\\repos\\skinhunter\\Views\\Pages\\ChampionDetailPage.xaml",
+              "RelativeDocumentMoniker": "Views\\Pages\\ChampionDetailPage.xaml",
+              "ToolTip": "C:\\Users\\dev\\source\\repos\\skinhunter\\Views\\Pages\\ChampionDetailPage.xaml",
+              "RelativeToolTip": "Views\\Pages\\ChampionDetailPage.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-06-01T16:16:31.385Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
               "Title": "SettingsViewModel.cs",
               "DocumentMoniker": "C:\\Users\\dev\\source\\repos\\skinhunter\\ViewModels\\Pages\\SettingsViewModel.cs",
               "RelativeDocumentMoniker": "ViewModels\\Pages\\SettingsViewModel.cs",
@@ -38,12 +155,11 @@
               "RelativeToolTip": "ViewModels\\Pages\\SettingsViewModel.cs",
               "ViewState": "AgIAABsAAAAAAAAAAIAxwDkAAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-01T14:21:20.43Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-01T14:21:20.43Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 9,
               "Title": "DataViewModel.cs",
               "DocumentMoniker": "C:\\Users\\dev\\source\\repos\\skinhunter\\ViewModels\\Pages\\DataViewModel.cs",
               "RelativeDocumentMoniker": "ViewModels\\Pages\\DataViewModel.cs",
@@ -51,12 +167,11 @@
               "RelativeToolTip": "ViewModels\\Pages\\DataViewModel.cs",
               "ViewState": "AgIAAB0AAAAAAAAAAAAQwDcAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-01T14:20:50.24Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-01T14:20:50.24Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 10,
               "Title": "DashboardViewModel.cs",
               "DocumentMoniker": "C:\\Users\\dev\\source\\repos\\skinhunter\\ViewModels\\Pages\\DashboardViewModel.cs",
               "RelativeDocumentMoniker": "ViewModels\\Pages\\DashboardViewModel.cs",
@@ -64,12 +179,11 @@
               "RelativeToolTip": "ViewModels\\Pages\\DashboardViewModel.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-01T14:20:09.536Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-01T14:20:09.536Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 7,
               "Title": "App.xaml.cs",
               "DocumentMoniker": "C:\\Users\\dev\\source\\repos\\skinhunter\\App.xaml.cs",
               "RelativeDocumentMoniker": "App.xaml.cs",
