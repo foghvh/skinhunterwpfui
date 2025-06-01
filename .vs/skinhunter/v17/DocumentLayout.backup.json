@@ -1,0 +1,98 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\dev\\source\\repos\\skinhunter\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|c:\\users\\dev\\source\\repos\\skinhunter\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|solutionrelative:app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|c:\\users\\dev\\source\\repos\\skinhunter\\viewmodels\\pages\\settingsviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|solutionrelative:viewmodels\\pages\\settingsviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|c:\\users\\dev\\source\\repos\\skinhunter\\viewmodels\\pages\\dataviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|solutionrelative:viewmodels\\pages\\dataviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|c:\\users\\dev\\source\\repos\\skinhunter\\viewmodels\\pages\\dashboardviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{52A3C67A-F474-4999-A569-9D6BE06F136D}|skinhunter.csproj|solutionrelative:viewmodels\\pages\\dashboardviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "SettingsViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\dev\\source\\repos\\skinhunter\\ViewModels\\Pages\\SettingsViewModel.cs",
+              "RelativeDocumentMoniker": "ViewModels\\Pages\\SettingsViewModel.cs",
+              "ToolTip": "C:\\Users\\dev\\source\\repos\\skinhunter\\ViewModels\\Pages\\SettingsViewModel.cs",
+              "RelativeToolTip": "ViewModels\\Pages\\SettingsViewModel.cs",
+              "ViewState": "AgIAABsAAAAAAAAAAIAxwDkAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-01T14:21:20.43Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "DataViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\dev\\source\\repos\\skinhunter\\ViewModels\\Pages\\DataViewModel.cs",
+              "RelativeDocumentMoniker": "ViewModels\\Pages\\DataViewModel.cs",
+              "ToolTip": "C:\\Users\\dev\\source\\repos\\skinhunter\\ViewModels\\Pages\\DataViewModel.cs",
+              "RelativeToolTip": "ViewModels\\Pages\\DataViewModel.cs",
+              "ViewState": "AgIAAB0AAAAAAAAAAAAQwDcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-01T14:20:50.24Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "DashboardViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\dev\\source\\repos\\skinhunter\\ViewModels\\Pages\\DashboardViewModel.cs",
+              "RelativeDocumentMoniker": "ViewModels\\Pages\\DashboardViewModel.cs",
+              "ToolTip": "C:\\Users\\dev\\source\\repos\\skinhunter\\ViewModels\\Pages\\DashboardViewModel.cs",
+              "RelativeToolTip": "ViewModels\\Pages\\DashboardViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-01T14:20:09.536Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "App.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\dev\\source\\repos\\skinhunter\\App.xaml.cs",
+              "RelativeDocumentMoniker": "App.xaml.cs",
+              "ToolTip": "C:\\Users\\dev\\source\\repos\\skinhunter\\App.xaml.cs",
+              "RelativeToolTip": "App.xaml.cs",
+              "ViewState": "AgIAACQAAAAAAAAAAAAlwDAAAABAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-01T14:05:37.12Z",
+              "EditorCaption": ""
+            }
+          ]
+        },
+        {
+          "DockedWidth": 98,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
