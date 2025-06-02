@@ -9,47 +9,65 @@
     xmlns:m="clr-namespace:skinhunter.Models"
     xmlns:converters="clr-namespace:skinhunter.Converters"
     mc:Ignorable="d"
-    x:Name="ChampionDetailPageSelf"
+    x:Name="ChampionDetailPageSelf" 
     d:DataContext="{d:DesignInstance Type=vm:ChampionDetailPageViewModel, IsDesignTimeCreatable=False}"
-    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-    ScrollViewer.VerticalScrollBarVisibility="Auto">
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}">
     <Page.Resources>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+
+        <Storyboard x:Key="FadeInContentStoryboard">
+            <DoubleAnimation
+                Storyboard.TargetProperty="Opacity"
+                From="0.0" To="1.0" Duration="0:0:0.5" />
+        </Storyboard>
     </Page.Resources>
-    <!-- Establecemos el DataContext del Grid raíz al ViewModel de la Page -->
-    <Grid Margin="20,0,20,20" DataContext="{Binding ViewModel, ElementName=ChampionDetailPageSelf}">
-        <Grid Visibility="{Binding IsLoading, Converter={StaticResource InverseBooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+    <Grid Margin="28,12,28,20" DataContext="{Binding ViewModel, ElementName=ChampionDetailPageSelf}">
+        <Grid x:Name="PageContentGrid" Opacity="0">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsLoading, FallbackValue=True}" Value="False">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Setter Property="Opacity" Value="0"/>
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource FadeInContentStoryboard}"/>
+                            </DataTrigger.EnterActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <ui:Button Grid.Row="0" Command="{Binding GoBackCommand}" Content="Back" Appearance="Secondary"
-                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,0,15">
-                <ui:Button.Icon>
-                    <ui:SymbolIcon Symbol="ArrowLeft24" />
-                </ui:Button.Icon>
-            </ui:Button>
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
+                <ui:Button Command="{Binding GoBackCommand}" Appearance="Secondary" VerticalAlignment="Center">
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="ArrowLeft24" />
+                    </ui:Button.Icon>
+                </ui:Button>
+            </StackPanel>
 
-            <Border Grid.Row="1" Padding="20" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Margin="0,0,0,20"
+            <Border Grid.Row="1" Padding="20" Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="8" Margin="0,0,0,20" VerticalAlignment="Center" HorizontalAlignment="Center"
                     Visibility="{Binding Champion, Converter={StaticResource NullToVisibilityConverter}}">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <Border Width="100" Height="100" CornerRadius="50" Margin="0,0,20,0" Background="{DynamicResource ControlFillColorTertiaryBrush}" ClipToBounds="True">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                    <Border Width="120" Height="120" CornerRadius="4" Margin="0,0,25,0" Background="{DynamicResource ControlFillColorTertiaryBrush}" ClipToBounds="True">
                         <Image Source="{Binding Champion.ChampionImageSource}" Stretch="Uniform" RenderOptions.BitmapScalingMode="Fant"/>
                     </Border>
-                    <StackPanel VerticalAlignment="Center" MaxWidth="600">
-                        <TextBlock Text="{Binding Champion.Name}" FontSize="28" FontWeight="SemiBold"/>
-                        <TextBlock Text="{Binding Champion.Title}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="18" FontStyle="Italic" Margin="0,2,0,8"/>
-                        <TextBlock Text="{Binding Champion.ShortBio}" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="14" TextWrapping="WrapWithOverflow" MaxHeight="60"/>
+                    <StackPanel VerticalAlignment="Center" MaxWidth="600" HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding Champion.Name, FallbackValue='Champion Details'}" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,0,0" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                        <TextBlock Text="{Binding Champion.Title}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="18" FontStyle="Italic" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding Champion.ShortBio}" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="14" TextWrapping="WrapWithOverflow"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
 
-            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="True">
                 <ItemsControl ItemsSource="{Binding Skins}"
                               VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
                               HorizontalAlignment="Stretch">
@@ -61,7 +79,7 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type m:Skin}">
                             <ui:CardAction
-                                Padding="0" Margin="8" Width="230" Height="280"
+                                Padding="0" Margin="8" Width="210" Height="260"
                                 HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                                 Background="Transparent" BorderThickness="1"
                                 IsChevronVisible="False" Cursor="Hand"
@@ -73,23 +91,20 @@
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <Border CornerRadius="5,5,0,0" Background="{DynamicResource ControlFillColorSecondaryBrush}">
-                                        <Image Source="{Binding TileImageUrl}" Stretch="UniformToFill" VerticalAlignment="Top"
-                                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                                    <Border CornerRadius="5,5,0,0" Background="{DynamicResource ControlFillColorInputActiveBrush}">
+                                        <Image Source="{Binding TileImageUrl}" Stretch="UniformToFill" VerticalAlignment="Top" RenderOptions.BitmapScalingMode="HighQuality"/>
                                     </Border>
-
-                                    <Image Source="pack://application:,,,/Assets/legacy-icon.png" Width="26" Height="26" Opacity="0.9"
-                                            HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10"
+                                    <Image Source="pack://application:,,,/Assets/legacy-icon.png" Width="24" Height="24" Opacity="0.8"
+                                            HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,8,0,0"
                                             Visibility="{Binding IsLegacy, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                    <Image Source="pack://application:,,,/Assets/chroma-icon.png" Width="26" Height="26" Opacity="0.9"
-                                            HorizontalAlignment="Right" VerticalAlignment="Top" Margin="10"
+                                    <Image Source="pack://application:,,,/Assets/chroma-icon.png" Width="24" Height="24" Opacity="0.8"
+                                            HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,10,0"
                                             Visibility="{Binding HasChromas, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-
-                                    <Border Grid.Row="1" Padding="10,8" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" CornerRadius="0,0,5,5">
+                                    <Border Grid.Row="1" Padding="10,8" Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="0,0,5,5">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <Image Source="{Binding RarityImageUrl}" Width="18" Height="18" Margin="0,0,8,0" VerticalAlignment="Center"
+                                            <Image Source="{Binding RarityImageUrl}" Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center"
                                                    Visibility="{Binding RarityImageUrl, Converter={StaticResource NullToVisibilityConverter}}"/>
-                                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="Medium" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" TextAlignment="Center" MaxWidth="180"/>
+                                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="Medium" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" TextAlignment="Center" MaxWidth="170"/>
                                         </StackPanel>
                                     </Border>
                                 </Grid>

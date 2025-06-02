@@ -31,17 +31,13 @@
         <ui:NavigationView
             x:Name="RootNavigation"
             Grid.Row="1"
-            Padding="0"
-            BreadcrumbBar="{Binding ElementName=BreadcrumbBar}"
-            FooterMenuItemsSource="{Binding ViewModel.FooterMenuItems, Mode=OneWay}"
-            FrameMargin="0"
             IsBackButtonVisible="Visible"
             IsPaneToggleVisible="True"
             MenuItemsSource="{Binding ViewModel.MenuItems, Mode=OneWay}"
-            PaneDisplayMode="LeftFluent">
-            <ui:NavigationView.Header>
-                <ui:BreadcrumbBar x:Name="BreadcrumbBar" Margin="42,32,42,20" />
-            </ui:NavigationView.Header>
+            FooterMenuItemsSource="{Binding ViewModel.FooterMenuItems, Mode=OneWay}"
+            PaneDisplayMode="LeftFluent"
+            HeaderVisibility="Collapsed" 
+            Padding="0">
             <ui:NavigationView.ContentOverlay>
                 <Grid>
                     <ui:SnackbarPresenter x:Name="SnackbarPresenter" />
@@ -64,7 +60,8 @@
             </ui:TitleBar.Icon>
         </ui:TitleBar>
 
-        <Grid Grid.Row="0" Grid.RowSpan="2" Background="#CC121212"
+        <Grid Grid.Row="0" Grid.RowSpan="2" 
+              Background="#A0000000"
               Visibility="{Binding ViewModel.DialogViewModel, Converter={StaticResource NullToVisibilityConverter}, FallbackValue=Collapsed}">
             <ContentControl Content="{Binding ViewModel.DialogViewModel}" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <ContentControl.Resources>
@@ -75,7 +72,8 @@
             </ContentControl>
         </Grid>
 
-        <Grid Grid.Row="0" Grid.RowSpan="2" Background="#DD0A0A0A"
+        <Grid Grid.Row="0" Grid.RowSpan="2" 
+              Background="#A0000000" 
               Visibility="{Binding ViewModel.OmnisearchDialogViewModel, Converter={StaticResource NullToVisibilityConverter}, FallbackValue=Collapsed}">
             <ContentControl Content="{Binding ViewModel.OmnisearchDialogViewModel}" 
                             HorizontalAlignment="Center" 
@@ -87,6 +85,5 @@
                 </ContentControl.Resources>
             </ContentControl>
         </Grid>
-
     </Grid>
 </ui:FluentWindow>

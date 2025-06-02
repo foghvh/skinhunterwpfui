@@ -28,6 +28,12 @@ namespace skinhunter.ViewModels.Pages
 
         public ICollectionView ChampionsView { get; }
 
+        // Esta propiedad controlará explícitamente la animación de "fade-in"
+        [ObservableProperty]
+        private bool _showContentWithAnimation;
+
+        private bool _dataLoadedAtLeastOnce = false;
+
         public ChampionGridPageViewModel(ICustomNavigationService customNavigationService)
         {
             _customNavigationService = customNavigationService;
@@ -38,14 +44,30 @@ namespace skinhunter.ViewModels.Pages
 
         public async Task OnNavigatedToAsync()
         {
-            if (!_allChampions.Any())
+            ShowContentWithAnimation = false; // Ocultar contenido para preparar animación
+
+            if (!_dataLoadedAtLeastOnce || !_allChampions.Any()) // Cargar solo si es la primera vez en la vida de la app o si se vació
             {
-                await LoadChampionsAsync();
+                IsLoading = true;
+                await LoadChampionsAsync(); // LoadChampionsAsync pondrá IsLoading = false
+                _dataLoadedAtLeastOnce = true;
+            }
+            else
+            {
+                IsLoading = false; // Los datos ya están, no hay "carga"
+            }
+
+            // Después de que IsLoading es definitivamente false (ya sea por carga o por caché)
+            // Activamos la animación
+            if (!IsLoading)
+            {
+                ShowContentWithAnimation = true;
             }
         }
 
         public Task OnNavigatedFromAsync()
         {
+            ShowContentWithAnimation = false; // Ocultar al salir para que la próxima vez pueda animar
             return Task.CompletedTask;
         }
 
@@ -67,6 +89,8 @@ namespace skinhunter.ViewModels.Pages
                 }
                 System.Windows.Application.Current?.Dispatcher.Invoke(() => ChampionsView?.Refresh());
             }
+            // _dataLoadedAtLeastOnce sigue siendo true, pero _allChampions está vacío
+            // para que OnNavigatedToAsync recargue
             IsLoading = false;
         }
 
@@ -140,32 +164,21 @@ namespace skinhunter.ViewModels.Pages
         [RelayCommand]
         public async Task LoadChampionsAsync()
         {
-            if (IsLoading && _allChampions.Any())
-            {
-                return;
-            }
-
-            IsLoading = true;
-
-            if (_allChampions.Any())
-            {
-                var championsToRelease = _allChampions.ToList();
-                System.Windows.Application.Current?.Dispatcher.Invoke(() => _allChampions.Clear());
-                foreach (var champ in championsToRelease)
-                {
-                    champ.ReleaseImage();
-                }
-            }
+            if (!IsLoading) IsLoading = true; // Asegurar que esté en loading
 
             var champs = await CdragonDataService.GetChampionSummariesAsync();
             if (champs != null)
             {
-                foreach (var champ in champs.OrderBy(c => c.Name))
+                var tempChamps = champs.OrderBy(c => c.Name).ToList();
+                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
                 {
-                    if (champ.Roles == null) champ.Roles = new List<string>();
-                    System.Windows.Application.Current?.Dispatcher.Invoke(() => _allChampions.Add(champ));
-                }
-
+                    _allChampions.Clear();
+                    foreach (var champ in tempChamps)
+                    {
+                        if (champ.Roles == null) champ.Roles = new List<string>();
+                        _allChampions.Add(champ);
+                    }
+                });
                 PopulateRoles();
                 System.Windows.Application.Current?.Dispatcher.Invoke(() => ChampionsView.Refresh());
             }
@@ -183,12 +196,7 @@ namespace skinhunter.ViewModels.Pages
         {
             if (champion != null)
             {
-                Debug.WriteLine($"[ChampionGridPageViewModel.SelectChampion] Champion ID: {champion.Id}, Name: {champion.Name}");
                 _customNavigationService.NavigateToChampionDetail(champion.Id);
-            }
-            else
-            {
-                Debug.WriteLine("[ChampionGridPageViewModel.SelectChampion] Champion object was null.");
             }
         }
     }

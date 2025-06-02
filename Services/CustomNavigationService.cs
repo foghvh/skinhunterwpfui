@@ -19,7 +19,7 @@ namespace skinhunter.Services
         void CloseDialog();
         void CloseOmnisearchDialog();
         void GoBack();
-        object? ConsumeNavigationParameter(); // Nuevo método
+        object? ConsumeNavigationParameter();
     }
 
     public class CustomNavigationService : ICustomNavigationService
@@ -27,7 +27,7 @@ namespace skinhunter.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly INavigationService _wpfUiNavigationService;
         private MainWindowViewModel? _mainWindowViewModelCache;
-        private object? _pendingNavigationParameter; // Para retener el parámetro
+        private object? _pendingNavigationParameter;
 
         public CustomNavigationService(IServiceProvider serviceProvider, INavigationService wpfUiNavigationService)
         {
@@ -40,15 +40,14 @@ namespace skinhunter.Services
         public void NavigateToChampionDetail(int championId)
         {
             Debug.WriteLine($"[CustomNavigationService.NavigateToChampionDetail] Storing parameter: {championId} and navigating to ChampionDetailPage");
-            _pendingNavigationParameter = championId; // Almacena el parámetro ANTES de navegar
-            _wpfUiNavigationService.Navigate(typeof(ChampionDetailPage)); // Navega SIN el parámetro aquí
+            _pendingNavigationParameter = championId;
+            _wpfUiNavigationService.Navigate(typeof(ChampionDetailPage));
         }
 
-        // El ViewModel de destino llamará a esto para obtener el parámetro
         public object? ConsumeNavigationParameter()
         {
             var parameter = _pendingNavigationParameter;
-            _pendingNavigationParameter = null; // Limpiar después de consumir
+            _pendingNavigationParameter = null;
             Debug.WriteLine($"[CustomNavigationService.ConsumeNavigationParameter] Parameter consumed: {parameter}");
             return parameter;
         }
@@ -64,7 +63,10 @@ namespace skinhunter.Services
         {
             var omnisearchVM = _serviceProvider.GetRequiredService<OmnisearchViewModel>();
             MainVM.OmnisearchDialogViewModel = omnisearchVM;
-            await omnisearchVM.EnsureDataLoadedAsync();
+            if (omnisearchVM is not null)
+            {
+                await omnisearchVM.EnsureDataLoadedAsync();
+            }
         }
 
         public void CloseDialog()
@@ -75,7 +77,7 @@ namespace skinhunter.Services
         public void CloseOmnisearchDialog()
         {
             var omniVM = MainVM.OmnisearchDialogViewModel;
-            if (omniVM != null)
+            if (omniVM is not null)
             {
                 omniVM.IsFilterPopupOpen = false;
             }
@@ -84,7 +86,7 @@ namespace skinhunter.Services
 
         public void GoBack()
         {
-            if (MainVM.DialogViewModel != null || MainVM.OmnisearchDialogViewModel != null)
+            if (MainVM.DialogViewModel is not null || MainVM.OmnisearchDialogViewModel is not null)
             {
                 CloseDialog();
                 CloseOmnisearchDialog();

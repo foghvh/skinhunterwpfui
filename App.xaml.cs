@@ -3,8 +3,7 @@ using System.Windows.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using skinhunter.Services; // Si tu namespace raíz es 'skinhunter'
-// Asegúrate que los siguientes using coincidan con tu estructura y namespace raíz
+using skinhunter.Services;
 using skinhunter.ViewModels.Pages;
 using skinhunter.ViewModels.Windows;
 using skinhunter.ViewModels.Dialogs;
@@ -13,12 +12,7 @@ using skinhunter.Views.Windows;
 using Wpf.Ui;
 using Wpf.Ui.DependencyInjection;
 
-// Si tu namespace raíz fuera, por ejemplo, "MyCoolApp", entonces sería:
-// using MyCoolApp.Services;
-// using MyCoolApp.ViewModels.Pages;
-// etc.
-
-namespace skinhunter // Este debe coincidir con el Espacio de nombres predeterminado de tu proyecto
+namespace skinhunter
 {
     public partial class App
     {
@@ -45,21 +39,18 @@ namespace skinhunter // Este debe coincidir con el Espacio de nombres predetermi
                 services.AddSingleton<INavigationWindow, MainWindow>();
                 services.AddSingleton<MainWindowViewModel>();
 
-                // ViewModels de Páginas
                 services.AddSingleton<ChampionGridPageViewModel>();
                 services.AddSingleton<ChampionDetailPageViewModel>();
-                services.AddSingleton<DashboardViewModel>(); // Aquí es donde falla si el using/namespace es incorrecto
-                services.AddSingleton<DataViewModel>();       // Aquí es donde falla
-                services.AddSingleton<SettingsViewModel>();   // Aquí es donde falla
+                services.AddSingleton<DashboardViewModel>();
+                services.AddSingleton<DataViewModel>();
+                services.AddSingleton<SettingsViewModel>();
 
-                // Vistas de Páginas
                 services.AddTransient<ChampionGridPage>();
                 services.AddTransient<ChampionDetailPage>();
                 services.AddTransient<DashboardPage>();
                 services.AddTransient<DataPage>();
                 services.AddTransient<SettingsPage>();
 
-                // ViewModels de Diálogos
                 services.AddTransient<OmnisearchViewModel>();
                 services.AddTransient<SkinDetailViewModel>();
 

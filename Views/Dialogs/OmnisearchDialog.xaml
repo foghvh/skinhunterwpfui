@@ -37,93 +37,107 @@
             </Setter>
         </Style>
     </UserControl.Resources>
-    <Border Background="{DynamicResource LayerFillColorDefaultBrush}" CornerRadius="8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" Padding="0">
+    <Border Background="{DynamicResource SystemControlPageBackgroundAltHighBrush}" CornerRadius="8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
         <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+            <Grid Visibility="{Binding IsLoading, Converter={StaticResource InverseBooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-            <DockPanel Grid.Row="0" Margin="20,15,15,10" LastChildFill="True">
-                <ui:Button DockPanel.Dock="Right" Command="{Binding CloseOmnisearchDialogCommand}" Appearance="Transparent" Icon="Dismiss24" VerticalAlignment="Center" ToolTipService.ToolTip="Close" Width="32" Height="32"/>
-                <TextBlock Text="Search" FontSize="20" FontWeight="Medium" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-            </DockPanel>
+                <DockPanel Grid.Row="0" Margin="20,15,15,10" LastChildFill="True">
+                    <ui:Button DockPanel.Dock="Right" Command="{Binding CloseOmnisearchDialogCommand}" Appearance="Transparent" ToolTipService.ToolTip="Close" Width="32" Height="32">
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="Dismiss24"/>
+                        </ui:Button.Icon>
+                    </ui:Button>
+                    <TextBlock Text="Search" FontSize="20" FontWeight="Medium" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                </DockPanel>
 
-            <Border Grid.Row="1" Background="{DynamicResource ApplicationBackgroundBrush}" Padding="15,12" Margin="20,5,20,15" CornerRadius="6">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                <Border Grid.Row="1" Background="{DynamicResource ApplicationBackgroundBrush}" Padding="15,12" Margin="20,5,20,15" CornerRadius="6">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                    <ui:TextBox Grid.Column="0" PlaceholderText="Search..." Icon="Search24" IconPlacement="Left"
-                             Text="{Binding Query, UpdateSourceTrigger=PropertyChanged, Delay=400}"
-                             Height="40" VerticalContentAlignment="Center" FontSize="15" Padding="35,0,5,0"
-                             BorderThickness="0.5" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"/>
+                        <ui:TextBox Grid.Column="0" PlaceholderText="Search..." IconPlacement="Left"
+                                 Text="{Binding Query, UpdateSourceTrigger=PropertyChanged, Delay=400}"
+                                 Height="40" VerticalContentAlignment="Center" FontSize="15" Padding="35,0,5,0"
+                                 BorderThickness="0.5" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                            <ui:TextBox.Icon>
+                                <ui:SymbolIcon Symbol="Search24"/>
+                            </ui:TextBox.Icon>
+                        </ui:TextBox>
 
-                    <Popup Placement="Bottom" PlacementTarget="{Binding ElementName=FilterButton}" IsOpen="{Binding IsFilterPopupOpen, Mode=TwoWay}" AllowsTransparency="True" StaysOpen="False" VerticalOffset="5" HorizontalOffset="-10">
-                        <Border Background="{DynamicResource LayerFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" Padding="12" CornerRadius="4" Margin="0,5,0,0">
-                            <StackPanel>
-                                <CheckBox IsChecked="{Binding ShowChampionsFilter}" Content="Champions" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,8"/>
-                                <CheckBox IsChecked="{Binding ShowSkinsFilter}" Content="Skins" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                            </StackPanel>
-                        </Border>
-                    </Popup>
+                        <Popup Placement="Bottom" PlacementTarget="{Binding ElementName=FilterButton}" IsOpen="{Binding IsFilterPopupOpen, Mode=TwoWay}" AllowsTransparency="True" StaysOpen="False" VerticalOffset="5" HorizontalOffset="-10">
+                            <Border Background="{DynamicResource LayerFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" Padding="12" CornerRadius="4" Margin="0,5,0,0">
+                                <StackPanel>
+                                    <CheckBox IsChecked="{Binding ShowChampionsFilter}" Content="Champions" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,8"/>
+                                    <CheckBox IsChecked="{Binding ShowSkinsFilter}" Content="Skins" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                </StackPanel>
+                            </Border>
+                        </Popup>
 
-                    <ui:Button x:Name="FilterButton" Grid.Column="1" Appearance="Transparent" Margin="8,0,0,0" Width="40" Height="40"
-                            Command="{Binding ToggleFilterPopupCommand}" ToolTipService.ToolTip="Filters" Icon="Filter24"/>
+                        <ui:Button x:Name="FilterButton" Grid.Column="1" Appearance="Transparent" Margin="8,0,0,0" Width="40" Height="40"
+                                Command="{Binding ToggleFilterPopupCommand}" ToolTipService.ToolTip="Filters">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Filter24"/>
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </Grid>
+                </Border>
+
+                <Grid Grid.Row="2" Margin="20,0,20,20" MinHeight="100">
+                    <ui:ProgressRing IsIndeterminate="True" 
+                                 Visibility="{Binding IsLoadingSearchResults, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"
+                                 Width="30" Height="30" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" 
+                                  Visibility="{Binding IsLoadingSearchResults, Converter={StaticResource InverseBooleanToVisibilityConverter}, FallbackValue=Visible}">
+                        <ItemsControl ItemsSource="{Binding SearchResultsView}">
+                            <ItemsControl.GroupStyle>
+                                <GroupStyle>
+                                    <GroupStyle.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" FontWeight="Medium" Margin="0,8,0,3" Opacity="0.8"/>
+                                        </DataTemplate>
+                                    </GroupStyle.HeaderTemplate>
+                                </GroupStyle>
+                            </ItemsControl.GroupStyle>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type m:SearchResultItem}">
+                                    <Button Command="{Binding DataContext.SelectResultCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource ButtonTransparentStyle}" Margin="0,2">
+                                        <Border Padding="10,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" Width="48" Height="48" CornerRadius="3" Margin="0,0,15,0" Background="{DynamicResource ControlFillColorSecondaryBrush}">
+                                                    <Grid>
+                                                        <Border Background="{DynamicResource ControlFillColorTertiaryBrush}" Visibility="{Binding ImageSource, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=True, FallbackValue=Visible}"/>
+                                                        <Image Source="{Binding ImageSource}" Stretch="Uniform" RenderOptions.BitmapScalingMode="Fant"/>
+                                                    </Grid>
+                                                </Border>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="14" FontWeight="Normal" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding DisplayType}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
                 </Grid>
-            </Border>
-
-            <Grid Grid.Row="2" Margin="20,0,20,20" MinHeight="100">
-                <ui:ProgressRing Style="{DynamicResource LoadingProgressRingStyle}" 
-                             Visibility="{Binding IsLoadingSearchResults, Converter={StaticResource BooleanToVisibilityConverter}}"
-                             Width="30" Height="30" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" 
-                              Visibility="{Binding IsLoadingSearchResults, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
-                    <ItemsControl ItemsSource="{Binding SearchResultsView}">
-                        <ItemsControl.GroupStyle>
-                            <GroupStyle>
-                                <GroupStyle.HeaderTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" FontWeight="Medium" Margin="0,8,0,3" Opacity="0.8"/>
-                                    </DataTemplate>
-                                </GroupStyle.HeaderTemplate>
-                            </GroupStyle>
-                        </ItemsControl.GroupStyle>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type m:SearchResultItem}">
-                                <Button Command="{Binding DataContext.SelectResultCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
-                                        CommandParameter="{Binding}"
-                                        Style="{StaticResource ButtonTransparentStyle}" Margin="0,2">
-                                    <Border Padding="10,8">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-
-                                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="3" Margin="0,0,15,0" Background="{DynamicResource ControlFillColorSecondaryBrush}">
-                                                <Grid>
-                                                    <Border Background="{DynamicResource ControlFillColorTertiaryBrush}" Visibility="{Binding ImageSource, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=True, FallbackValue=Visible}"/>
-                                                    <Image Source="{Binding ImageSource}" Stretch="Uniform" RenderOptions.BitmapScalingMode="Fant"/>
-                                                </Grid>
-                                            </Border>
-
-                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="14" FontWeight="Normal" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{Binding DisplayType}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Border>
-                                </Button>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
             </Grid>
+            <ui:ProgressRing IsIndeterminate="True" HorizontalAlignment="Center" VerticalAlignment="Center"
+                              Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}" />
         </Grid>
     </Border>
 </UserControl>
