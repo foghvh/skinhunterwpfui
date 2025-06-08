@@ -1,0 +1,46 @@
+<Page
+    x:Class="skinhunter.Views.Pages.ProfilePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:skinhunter.ViewModels.Pages"
+    mc:Ignorable="d"
+    d:DataContext="{d:DesignInstance Type=vm:ProfileViewModel, IsDesignTimeCreatable=False}"
+    DataContext="{Binding ViewModel, RelativeSource={RelativeSource Self}}"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    ScrollViewer.CanContentScroll="True">
+    <Grid Margin="28,12,28,20">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="300">
+            <TextBlock Text="User Profile" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+
+            <Border Width="100" Height="100" CornerRadius="50" Background="{DynamicResource AccentFillColorDefaultBrush}" Margin="0,0,0,20" HorizontalAlignment="Center">
+                <TextBlock Text="{Binding UserAvatarFallback}" FontSize="48" FontWeight="Bold"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+            </Border>
+
+            <ui:Card Padding="20">
+                <StackPanel>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Username:" FontSize="16" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Grid.Column="1" Text="{Binding UserName}" FontSize="16" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    </Grid>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Credits:" FontSize="16" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Grid.Column="1" Text="{Binding UserCredits}" FontSize="16" VerticalAlignment="Center" Foreground="LightGreen"/>
+                    </Grid>
+                </StackPanel>
+            </ui:Card>
+        </StackPanel>
+    </Grid>
+</Page>

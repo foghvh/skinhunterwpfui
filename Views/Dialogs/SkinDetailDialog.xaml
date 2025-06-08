@@ -1,0 +1,199 @@
+<UserControl x:Class="skinhunter.Views.Dialogs.SkinDetailDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vm="clr-namespace:skinhunter.ViewModels.Dialogs"
+             xmlns:m="clr-namespace:skinhunter.Models"
+             xmlns:converters="clr-namespace:skinhunter.Converters"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:SkinDetailViewModel, IsDesignTimeCreatable=False}"
+             Width="850" MaxHeight="650" d:DesignWidth="850">
+    <UserControl.Resources>
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <converters:ChromaToButtonTextConverter x:Key="ChromaToButtonTextConverter"/>
+        <Style x:Key="CardBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="5"/>
+        </Style>
+        <Style x:Key="RadioButtonCardStyle" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Width" Value="85"/>
+            <Setter Property="Height" Value="85"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                                <Setter TargetName="border" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+    <Border Background="{DynamicResource ApplicationBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+        <Grid>
+            <Grid Margin="20" Visibility="{Binding IsLoading, Converter={StaticResource InverseBooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <DockPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,15" LastChildFill="False">
+                    <ui:Button DockPanel.Dock="Right" Command="{Binding CloseDialogCommand}" Appearance="Transparent" ToolTipService.ToolTip="Close">
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="Dismiss24"/>
+                        </ui:Button.Icon>
+                    </ui:Button>
+                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                        <Image Source="{Binding SelectedSkin.RarityImageUrl}" Width="20" Height="20" Margin="0,0,8,0" VerticalAlignment="Center"
+                               Visibility="{Binding SelectedSkin.RarityImageUrl, Converter={StaticResource NullToVisibilityConverter}}"/>
+                        <TextBlock Text="{Binding SelectedSkin.Name}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DockPanel>
+
+                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,25,0" MaxWidth="400">
+                    <Border Style="{StaticResource CardBorderStyle}" Padding="0">
+                        <Grid>
+                            <Image Source="{Binding SelectedSkin.SplashImageUrl}" Height="240" Stretch="UniformToFill" VerticalAlignment="Top" />
+                        </Grid>
+                    </Border>
+                    <ScrollViewer MaxHeight="150" VerticalScrollBarVisibility="Auto" Margin="0,15,0,0">
+                        <TextBlock Text="{Binding SelectedSkin.Description, FallbackValue='This skin does not have a description.'}"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13" TextWrapping="Wrap"/>
+                    </ScrollViewer>
+                    <Border Background="#44FFFF00" BorderBrush="#FFFFCC00" BorderThickness="1" CornerRadius="3" Padding="8,5" Margin="0,15,0,0"
+                            Visibility="{Binding SelectedSkin.IsLegacy, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="This skin may not work properly due to game updates" FontSize="11" Foreground="#FFFFEEAA" TextWrapping="Wrap"/>
+                    </Border>
+                </StackPanel>
+
+                <DockPanel Grid.Row="1" Grid.Column="1">
+                    <StackPanel DockPanel.Dock="Top">
+                        <TextBlock Margin="0,0,0,10" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                            <Run Text="View skin on "/>
+                            <Hyperlink NavigateUri="{Binding KhadaViewerUrl}" RequestNavigate="Hyperlink_RequestNavigate" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}">
+                                <Run Text="Model viewer"/>
+                            </Hyperlink>
+                        </TextBlock>
+                    </StackPanel>
+                    <Separator DockPanel.Dock="Top" Margin="0,0,0,15" Background="{DynamicResource CardStrokeColorDefaultBrush}"/>
+
+                    <Border DockPanel.Dock="Bottom" Margin="0,15,0,0" Background="{DynamicResource InfoBadgeBackground}" BorderBrush="{DynamicResource InfoBadgeBackground}" BorderThickness="1" Padding="8,5" CornerRadius="3">
+                        <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                             <Run Text="This is going to consume a credit"/>
+                             <Run Text="{Binding UserCredits, StringFormat='({0} credits left)'}" Foreground="LightGreen"/>
+                        </TextBlock>
+                    </Border>
+
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock Text="Chromas" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <TabControl Padding="0" Margin="0,0,0,0">
+                            <TabItem Header="Circles">
+                                <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <TextBlock Text="Select a variation to download." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,8,0,8" FontStyle="Italic"/>
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="260" Padding="5,0,30,0" HorizontalScrollBarVisibility="Disabled">
+                                        <ItemsControl ItemsSource="{Binding AvailableChromas}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel Orientation="Horizontal" ItemWidth="95" ItemHeight="105"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type m:Chroma}">
+                                                    <RadioButton GroupName="ChromaSelectionCircles" Style="{StaticResource RadioButtonCardStyle}"
+                                                                 IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                 Command="{Binding DataContext.ToggleChromaSelectionCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+                                                                 CommandParameter="{Binding}">
+                                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                            <Ellipse Width="50" Height="50" Stroke="{DynamicResource CardStrokeColorDefaultBrush}" StrokeThickness="1" Fill="{Binding ColorBrush}" Margin="0,5,0,5"/>
+                                                            <TextBlock Text="{Binding Name}" HorizontalAlignment="Center" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,0,0,5" MaxWidth="75" TextAlignment="Center" TextWrapping="Wrap"/>
+                                                        </StackPanel>
+                                                    </RadioButton>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </StackPanel>
+                            </TabItem>
+                            <TabItem Header="Images">
+                                <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <TextBlock Text="Select a variation to download." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,8,0,8" FontStyle="Italic"/>
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="260" Padding="5,0,30,0" HorizontalScrollBarVisibility="Disabled">
+                                        <ItemsControl ItemsSource="{Binding AvailableChromas}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel Orientation="Horizontal" ItemWidth="95" ItemHeight="105"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type m:Chroma}">
+                                                    <RadioButton GroupName="ChromaSelectionImages" Style="{StaticResource RadioButtonCardStyle}"
+                                                                 IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                 Command="{Binding DataContext.ToggleChromaSelectionCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+                                                                 CommandParameter="{Binding}">
+                                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                            <Image Source="{Binding ImageUrl}" Width="60" Height="60" Stretch="Uniform" Margin="0,5,0,5" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                            <TextBlock Text="{Binding Name}" HorizontalAlignment="Center" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,0,0,5" MaxWidth="75" TextAlignment="Center" TextWrapping="Wrap"/>
+                                                        </StackPanel>
+                                                    </RadioButton>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </StackPanel>
+                            </TabItem>
+                        </TabControl>
+                    </StackPanel>
+                </DockPanel>
+
+                <Grid Grid.Row="2" Grid.ColumnSpan="2" Margin="0,20,0,0">
+                    <ui:Button Content="Close" HorizontalAlignment="Left" Width="90" Appearance="Secondary"
+                            Command="{Binding CloseDialogCommand}"/>
+                    <ui:Button Content="{Binding SelectedChroma, Converter={StaticResource ChromaToButtonTextConverter}, FallbackValue='Download Skin'}"
+                             Appearance="Primary" HorizontalAlignment="Right" Width="150"
+                             Command="{Binding DownloadSkinCommand}"
+                             IsEnabled="{Binding CanDownload}">
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="ArrowDownload24" Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+                        </ui:Button.Icon>
+                    </ui:Button>
+                </Grid>
+            </Grid>
+            <ui:ProgressRing IsIndeterminate="True" HorizontalAlignment="Center" VerticalAlignment="Center"
+                              Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}" />
+        </Grid>
+    </Border>
+</UserControl>

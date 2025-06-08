@@ -1,0 +1,65 @@
+	<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net9.0-windows</TargetFramework>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<ApplicationIcon>Assets/wpfui-icon.ico</ApplicationIcon>
+		<UseWPF>true</UseWPF>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<!-- <EnableDefaultCompileItems>true</EnableDefaultCompileItems> -->
+		<!-- La línea de arriba es true por defecto en proyectos SDK, no necesitas añadirla explícitamente -->
+		<!-- Asegúrate de que NO esté en false si esperas inclusiones automáticas -->
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Include="Assets/wpfui-icon.ico" />
+		<Content Include="Tools\cslol-tools\cslol-dll.dll">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Tools\cslol-tools\mod-tools.exe">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.1" />
+		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.12.0" />
+		<PackageReference Include="supabase-csharp" Version="0.16.2" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.12.0" />
+		<!-- O la versión que tenías -->
+		<PackageReference Include="WPF-UI" Version="4.0.2" />
+		<PackageReference Include="WPF-UI.DependencyInjection" Version="4.0.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Imágenes -->
+		<None Remove="Assets\wpfui-icon-256.png" />
+		<None Remove="Assets\wpfui-icon-1024.png" />
+		<None Remove="Assets\logo.png" />
+		<None Remove="Assets\chroma-icon.png" />
+		<None Remove="Assets\legacy-icon.png" />
+		<None Remove="Assets\placeholder.png" />
+		<None Remove="Tools\cslol-tools\cslol-dll.dll" />
+		<None Remove="Tools\cslol-tools\mod-tools.exe" />
+
+		<Resource Include="Assets\wpfui-icon-256.png" />
+		<Resource Include="Assets\wpfui-icon-1024.png" />
+		<Resource Include="Assets\logo.png" />
+		<Resource Include="Assets\chroma-icon.png" />
+		<Resource Include="Assets\legacy-icon.png" />
+		<Resource Include="Assets\placeholder.png" />
+	</ItemGroup>
+
+	<!--
+  IMPORTANTE: NO DEBERÍA HABER LÍNEAS <Compile Include="..."/> AQUÍ
+  para los archivos .cs que están dentro de tu estructura de proyecto
+  (como ViewModels\Pages\DashboardPageViewModel.cs)
+  A MENOS que hayas puesto <EnableDefaultCompileItems>false</EnableDefaultCompileItems> explícitamente.
+  Si tienes <EnableDefaultCompileItems>true</EnableDefaultCompileItems> (o está omitido, lo que implica true),
+  y también tienes <Compile Include="..."> explícitas, eso causa la compilación duplicada.
+  -->
+
+</Project>
