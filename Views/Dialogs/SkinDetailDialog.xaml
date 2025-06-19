@@ -9,7 +9,7 @@
              xmlns:converters="clr-namespace:skinhunter.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:SkinDetailViewModel, IsDesignTimeCreatable=False}"
-             Width="850" MaxHeight="650" d:DesignWidth="850">
+             Width="850" MaxHeight="650" MinHeight="600" d:DesignWidth="850">
     <UserControl.Resources>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>

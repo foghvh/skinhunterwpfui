@@ -11,6 +11,7 @@
     xmlns:viewsDialogs="clr-namespace:skinhunter.Views.Dialogs"
     xmlns:converters="clr-namespace:skinhunter.Converters"
     Title="{Binding ViewModel.ApplicationTitle, Mode=OneWay}"
+    Icon="pack://application:,,,/Assets/icon.ico"
     Width="1280"
     Height="720" MinHeight="600" MinWidth="1000"
     d:DataContext="{d:DesignInstance Type=vmWindows:MainWindowViewModel, IsDesignTimeCreatable=True}"
@@ -20,46 +21,81 @@
     WindowCornerPreference="Round"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
-    <ui:FluentWindow.Resources>
-        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
-        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-    </ui:FluentWindow.Resources>
+    <Window.Resources>
+        <ResourceDictionary>
+            <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        </ResourceDictionary>
+    </Window.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar
-            x:Name="TitleBar"
-            Title="{Binding ViewModel.ApplicationTitle}"
+        <ui:NavigationView
             Grid.Row="0"
-            CloseWindowByDoubleClickOnIcon="True">
+            x:Name="RootNavigation"
+            Margin="0,42,0,0"
+            MenuItemsSource="{Binding ViewModel.MenuItems}"
+            FooterMenuItemsSource="{Binding ViewModel.FooterMenuItems}"
+            PaneDisplayMode="Top"
+            IsBackButtonVisible="Collapsed"
+            IsPaneToggleVisible="False"
+            OpenPaneLength="240">
+        </ui:NavigationView>
+
+        <Border Grid.Row="1" Background="{DynamicResource NavigationViewPaneBackground}" 
+                BorderBrush="{DynamicResource ControlElevationBorderBrush}" BorderThickness="0,0,0,0"
+                MinHeight="48" VerticalAlignment="Bottom">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="{Binding ElementName=RootNavigation, Path=OpenPaneLength}"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <ui:Button Grid.Column="0"
+                           DataContext="{Binding ViewModel.OverlayButtonViewModel}"
+                           Command="{Binding ToggleOverlayCommand}"
+                           Content="{Binding Content}"
+                           HorizontalAlignment="Stretch"
+                           HorizontalContentAlignment="Left"
+                           Margin="8,0"
+                           Padding="12,10"
+                           Appearance="Transparent">
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="{Binding Icon}" Margin="0,0,12,0" FontSize="18"/>
+                    </ui:Button.Icon>
+                </ui:Button>
+
+                <ItemsControl Grid.Column="1" ItemsSource="{Binding ViewModel.ModToolsOutputLog}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11" Margin="10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                <TextBlock.Triggers>
+                                    <EventTrigger RoutedEvent="Loaded">
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.4"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger>
+                                </TextBlock.Triggers>
+                            </TextBlock>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+        </Border>
+
+        <ui:TitleBar Grid.Row="0" Grid.RowSpan="2" VerticalAlignment="Top" Title="{Binding ViewModel.ApplicationTitle}" CloseWindowByDoubleClickOnIcon="True">
             <ui:TitleBar.Icon>
-                <ui:ImageIcon Source="pack://application:,,,/Assets/logo.png" />
+                <ui:ImageIcon Source="pack://application:,,,/Assets/icon.ico"/>
             </ui:TitleBar.Icon>
         </ui:TitleBar>
 
-        <ui:NavigationView
-            x:Name="RootNavigation"
-            Grid.Row="1"
-            IsBackButtonVisible="Visible"
-            IsPaneToggleVisible="True"
-            MenuItemsSource="{Binding ViewModel.MenuItems, Mode=OneWay}"
-            FooterMenuItemsSource="{Binding ViewModel.FooterMenuItems, Mode=OneWay}"
-            PaneDisplayMode="LeftFluent"
-            HeaderVisibility="Collapsed" 
-            Padding="0">
-            <ui:NavigationView.ContentOverlay>
-                <Grid>
-                    <ui:SnackbarPresenter x:Name="SnackbarPresenter" />
-                </Grid>
-            </ui:NavigationView.ContentOverlay>
-        </ui:NavigationView>
-
-        <Grid Grid.Row="0" Grid.RowSpan="2" 
-              Background="#A0000000"
-              Visibility="{Binding ViewModel.DialogViewModel, Converter={StaticResource NullToVisibilityConverter}, FallbackValue=Collapsed}">
+        <Grid Grid.Row="0" Grid.RowSpan="2" Background="#A0000000" Visibility="{Binding ViewModel.DialogViewModel, Converter={StaticResource NullToVisibilityConverter}, FallbackValue=Collapsed}" Panel.ZIndex="10">
             <ContentControl Content="{Binding ViewModel.DialogViewModel}" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <ContentControl.Resources>
                     <DataTemplate DataType="{x:Type vmDialogs:SkinDetailViewModel}">
@@ -69,12 +105,8 @@
             </ContentControl>
         </Grid>
 
-        <Grid Grid.Row="0" Grid.RowSpan="2" 
-              Background="#A0000000" 
-              Visibility="{Binding ViewModel.OmnisearchDialogViewModel, Converter={StaticResource NullToVisibilityConverter}, FallbackValue=Collapsed}">
-            <ContentControl Content="{Binding ViewModel.OmnisearchDialogViewModel}" 
-                            HorizontalAlignment="Center" 
-                            VerticalAlignment="Center">
+        <Grid Grid.Row="0" Grid.RowSpan="2" Background="#A0000000" Visibility="{Binding ViewModel.OmnisearchDialogViewModel, Converter={StaticResource NullToVisibilityConverter}, FallbackValue=Collapsed}" Panel.ZIndex="10">
+            <ContentControl Content="{Binding ViewModel.OmnisearchDialogViewModel}" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <ContentControl.Resources>
                     <DataTemplate DataType="{x:Type vmDialogs:OmnisearchViewModel}">
                         <viewsDialogs:OmnisearchDialog/>
@@ -83,23 +115,18 @@
             </ContentControl>
         </Grid>
 
-        <Grid Grid.Row="0" Grid.RowSpan="2" 
-              Background="{DynamicResource ApplicationBackgroundBrush}" Opacity="0.95"
-              Visibility="{Binding ViewModel.IsGloballyLoading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+        <Grid Grid.Row="0" Grid.RowSpan="2" Background="{DynamicResource ApplicationBackgroundBrush}" Opacity="0.95" Visibility="{Binding ViewModel.IsGloballyLoading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}" Panel.ZIndex="11">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                 <ui:ProgressRing IsIndeterminate="True" Width="60" Height="60" />
-                <TextBlock Text="{Binding ViewModel.GlobalLoadingMessage}" 
-                           FontSize="16" 
-                           Foreground="{DynamicResource TextFillColorPrimaryBrush}" 
-                           Margin="0,20,0,0"
-                           TextAlignment="Center"/>
+                <TextBlock Text="{Binding ViewModel.GlobalLoadingMessage}" FontSize="16" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,20,0,0" TextAlignment="Center"/>
             </StackPanel>
         </Grid>
 
-        <ContentPresenter
-            x:Name="RootContentDialog"
-            Grid.Row="0"
-            Grid.RowSpan="2" />
-
+        <Grid Grid.Row="0" Grid.RowSpan="2" Background="{DynamicResource ApplicationBackgroundBrush}" Opacity="0.95" Visibility="{Binding ViewModel.IsGlobalSuccessOverlayVisible, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}" Panel.ZIndex="12">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <ui:SymbolIcon Symbol="CheckmarkCircle24" FontSize="60" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                <TextBlock Text="{Binding ViewModel.GlobalSuccessMessage}" FontSize="16" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,20,0,0" TextAlignment="Center"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </ui:FluentWindow>

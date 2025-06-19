@@ -1,5 +1,4 @@
-﻿/// skinhunter Start of Views\Pages\InstalledSkinsPage.xaml.cs ///
-using skinhunter.ViewModels.Pages;
+﻿using skinhunter.ViewModels.Pages;
 using Wpf.Ui.Abstractions.Controls;
 
 namespace skinhunter.Views.Pages
@@ -11,9 +10,8 @@ namespace skinhunter.Views.Pages
         public InstalledSkinsPage(InstalledSkinsViewModel viewModel)
         {
             ViewModel = viewModel;
-            DataContext = this; // Para {Binding ViewModel.Property}
+            DataContext = this;
             InitializeComponent();
         }
     }
 }
-/// skinhunter End of Views\Pages\InstalledSkinsPage.xaml.cs ///

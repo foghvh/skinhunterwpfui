@@ -5,11 +5,11 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-    xmlns:vm="clr-namespace:skinhunter.ViewModels.Pages" 
+    xmlns:vm="clr-namespace:skinhunter.ViewModels.Pages"
     xmlns:m="clr-namespace:skinhunter.Models"
     xmlns:converters="clr-namespace:skinhunter.Converters"
     mc:Ignorable="d"
-    d:DataContext="{d:DesignInstance Type=vm:InstalledSkinsViewModel, IsDesignTimeCreatable=False}"
+    d:DataContext="{d:DesignInstance Type=vm:InstalledSkinsViewModel, IsDesignTimeCreatable=True}"
     DataContext="{Binding ViewModel, RelativeSource={RelativeSource Self}}"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     ScrollViewer.CanContentScroll="True">
@@ -17,6 +17,13 @@
         <ResourceDictionary>
             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
+            <Style x:Key="LoadingProgressRingStyle" TargetType="ui:ProgressRing">
+                <Setter Property="IsIndeterminate" Value="True"/>
+                <Setter Property="Width" Value="40"/>
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="HorizontalAlignment" Value="Center"/>
+            </Style>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -79,7 +86,7 @@
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type vm:InstalledSkinInfoDisplay}">
+                        <DataTemplate DataType="{x:Type m:InstalledSkinInfoDisplay}">
                             <Border BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4" Margin="8" Width="200">
                                 <StackPanel>
                                     <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" HorizontalAlignment="Right" Margin="0,5,5,0" ToolTipService.ToolTip="Select to uninstall"/>

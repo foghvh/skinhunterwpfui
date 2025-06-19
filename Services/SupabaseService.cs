@@ -1,10 +1,10 @@
-﻿/// skinhunter Start of Services\SupabaseService.cs ///
-using Supabase;
-using Supabase.Storage; // Para IStorageFileApi y FileOptions
-using Postgrest.Interfaces; // Para IPostgrestClient
-using System.Collections.Generic; // Para Dictionary
+﻿using Supabase;
+using Supabase.Storage;
+using Postgrest.Interfaces;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace skinhunter.Services
 {
@@ -17,6 +17,7 @@ namespace skinhunter.Services
         public SupabaseService(AuthTokenManager authTokenManager)
         {
             _authTokenManager = authTokenManager;
+            FileLoggerService.Log("[SupabaseService] Initialized.");
         }
 
         private Dictionary<string, string> GetAuthHeaders()
@@ -28,49 +29,44 @@ namespace skinhunter.Services
             if (_authTokenManager.IsAuthenticated && !string.IsNullOrEmpty(_authTokenManager.CurrentToken))
             {
                 headers["Authorization"] = $"Bearer {_authTokenManager.CurrentToken}";
+                FileLoggerService.Log("[SupabaseService] Added Authorization header.");
             }
             else
             {
-                FileLoggerService.Log("[SupabaseService.skinhunter] Warning: Attempting to get auth headers but user is not authenticated or token is missing.");
+                FileLoggerService.Log("[SupabaseService] Warning: Getting auth headers but user is not authenticated or token is missing.");
             }
             return headers;
         }
 
         public IPostgrestClient GetPostgrestClient()
         {
-            // Crea un nuevo cliente Postgrest cada vez o reutiliza uno si las cabeceras no cambian frecuentemente.
-            // Para simplicidad y asegurar el token más reciente, creamos uno nuevo.
+            FileLoggerService.Log("[SupabaseService] Creating Postgrest client.");
             var options = new Postgrest.ClientOptions
             {
                 Headers = GetAuthHeaders(),
-                Schema = "public" // Asegúrate que el schema sea el correcto
+                Schema = "public"
             };
-            // La URL para Postgrest es tu Supabase URL + "/rest/v1"
             return new Postgrest.Client($"{_supabaseUrl}/rest/v1", options);
         }
 
-        // Supabase.Storage.Client podría no tener una forma fácil de instanciar con solo URL y Headers
-        // en la v0.16.2 del SDK principal. La descarga de Storage podría necesitar HttpClient directamente.
-        // Sin embargo, el IStorageFileApi que devuelve _supabaseClient.Storage.From() sí usa las cabeceras
-        // del cliente Postgrest asociado al Supabase.Client si se configuró correctamente.
-
-        // Alternativa: Crear un cliente Supabase completo y actualizar sus cabeceras
-        // Esto es lo que intentamos antes y falló porque SetSession no funcionaba como esperábamos.
-        // La nueva estrategia es que SupabaseService en skinhunter NO use un Supabase.Client singleton
-        // para operaciones de datos, sino que construya clientes Postgrest/Storage con el token actual.
-
-        // Si la descarga de Storage sigue dando problemas de autenticación,
-        // consideraremos usar HttpClient directamente con el token en UserPreferencesService y SkinDetailViewModel.
-        // Por ahora, vamos a asumir que el cliente Supabase global inyectado (que ahora configuraremos
-        // correctamente en ApplicationHostService) es usado por Storage.
-
         public Supabase.Storage.Interfaces.IStorageFileApi<FileObject> GetStorageFileApi(string bucketId)
         {
-            // Esto requiere que el Supabase.Client global (inyectado en otros servicios)
-            // tenga su sesión/token correctamente establecido.
+            FileLoggerService.Log($"[SupabaseService] Getting StorageFileApi for bucket: {bucketId}");
+            // Get the globally injected Supabase.Client
             var supabaseClientGlobal = App.Services.GetRequiredService<Supabase.Client>();
+            // Ensure the global client has the latest token set if necessary.
+            // The current App.xaml.cs DI setup injects the client once.
+            // UserPreferencesService's HttpClient is configured per request with the latest token,
+            // which is more robust for API calls.
+            // For Storage downloads using the Supabase-csharp SDK's Storage client,
+            // the authentication depends on how the Supabase.Client instance itself is managed
+            // and if its session/token is updated.
+            // SkinDetailViewModel now uses the injected Supabase.Client directly for download,
+            // assuming its internal Storage client is configured correctly or relies on
+            // the base client's initial configuration or later updates.
+            // Let's log the current token status for the global client if possible (not easily exposed).
+            // Trusting the SDK's internal handling for now.
             return supabaseClientGlobal.Storage.From(bucketId);
         }
     }
 }
-/// skinhunter End of Services\SupabaseService.cs ///

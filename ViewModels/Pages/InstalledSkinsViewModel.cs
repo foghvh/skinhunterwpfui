@@ -4,31 +4,14 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Wpf.Ui.Abstractions.Controls;
-using System.IO;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows;
+using System;
+using Wpf.Ui.Controls;
 
 namespace skinhunter.ViewModels.Pages
 {
-    public partial class InstalledSkinInfoDisplay : ObservableObject
-    {
-        public InstalledSkinInfo Skin { get; }
-
-        [ObservableProperty]
-        private bool _isSelected;
-
-        public string DisplayName => string.IsNullOrEmpty(Skin.ChromaName) || Skin.ChromaName.Equals("Default", StringComparison.OrdinalIgnoreCase)
-                                    ? Skin.SkinName
-                                    : $"{Skin.SkinName} ({Skin.ChromaName})";
-        public string FileName => Skin.FileName;
-        public string ImageUrl => Skin.ImageUrl;
-        public string ChampionName { get; set; } = "Unknown Champion";
-
-        public InstalledSkinInfoDisplay(InstalledSkinInfo skin)
-        {
-            Skin = skin;
-        }
-    }
-
     public partial class InstalledSkinsViewModel : ViewModelBase, INavigationAware
     {
         private readonly UserPreferencesService _userPreferencesService;
@@ -36,24 +19,48 @@ namespace skinhunter.ViewModels.Pages
         private readonly MainWindowViewModel _mainVM;
 
         [ObservableProperty]
-        private ObservableCollection<InstalledSkinInfoDisplay> _installedSkins = new();
+        private ObservableCollection<InstalledSkinInfoDisplay> _installedSkins = [];
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(HasInstalledSkins))]
-        [NotifyPropertyChangedFor(nameof(CanUninstallSelected))]
         private bool _isLoadingSkinsList = true;
 
-        public bool HasInstalledSkins => InstalledSkins.Any();
-        public bool CanUninstallSelected => InstalledSkins.Any(s => s.IsSelected);
+        [ObservableProperty]
+        private bool _canUninstallSelected;
 
-        public InstalledSkinsViewModel(
-            UserPreferencesService userPreferencesService,
-            ModToolsService modToolsService,
-            MainWindowViewModel mainWindowViewModel)
+        public bool HasInstalledSkins => InstalledSkins.Count > 0;
+
+        private InstalledSkinsViewModel()
         {
-            _userPreferencesService = userPreferencesService;
-            _modToolsService = modToolsService;
-            _mainVM = mainWindowViewModel;
+            if (DesignerProperties.GetIsInDesignMode(new DependencyObject()))
+            {
+                _installedSkins.Add(new InstalledSkinInfoDisplay(new InstalledSkinInfo { ChampionId = 1, SkinOrChromaId = 1001, FileName = "test-skin.fantome", FolderName = "test-skin", SkinName = "Test Skin", ChromaName = "Red", ImageUrl = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-tiles/aatrox_0.jpg" }) { ChampionName = "Aatrox" });
+                _installedSkins.Add(new InstalledSkinInfoDisplay(new InstalledSkinInfo { ChampionId = 2, SkinOrChromaId = 2001, FileName = "test-skin2.fantome", FolderName = "test-skin2", SkinName = "Second Skin", ChromaName = null, ImageUrl = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-tiles/ahri_0.jpg" }) { ChampionName = "Ahri" });
+                _installedSkins[0].IsSelected = true;
+                IsLoadingSkinsList = false;
+                UpdateCanUninstall();
+            }
+        }
+
+        public InstalledSkinsViewModel(UserPreferencesService userPreferencesService,
+            ModToolsService modToolsService,
+            MainWindowViewModel mainWindowViewModel) : this()
+        {
+            if (!DesignerProperties.GetIsInDesignMode(new DependencyObject()))
+            {
+                _userPreferencesService = userPreferencesService;
+                _modToolsService = modToolsService;
+                _mainVM = mainWindowViewModel;
+            }
+        }
+
+        private void UpdateCanUninstall()
+        {
+            CanUninstallSelected = InstalledSkins.Any(s => s.IsSelected);
+            Application.Current.Dispatcher.Invoke(() => {
+                UninstallSelectedCommand.NotifyCanExecuteChanged();
+                UninstallAllCommand.NotifyCanExecuteChanged();
+            });
         }
 
         public async Task OnNavigatedToAsync()
@@ -63,130 +70,192 @@ namespace skinhunter.ViewModels.Pages
 
         public Task OnNavigatedFromAsync()
         {
+            foreach (var skinDisplay in InstalledSkins)
+            {
+                skinDisplay.SelectionChanged -= OnSkinSelectionChanged;
+            }
+            InstalledSkins.Clear();
             return Task.CompletedTask;
         }
 
-        public void OnNavigatedTo(object? parameter) { }
+        public void OnNavigatedTo(object? _) { }
+
+        private void OnSkinSelectionChanged(object? sender, EventArgs e)
+        {
+            UpdateCanUninstall();
+        }
 
         [RelayCommand]
+        private async Task RefreshCommand()
+        {
+            await LoadInstalledSkinsAsync();
+        }
+
         private async Task LoadInstalledSkinsAsync()
         {
             IsLoadingSkinsList = true;
+
+            foreach (var skinDisplay in InstalledSkins)
+            {
+                skinDisplay.SelectionChanged -= OnSkinSelectionChanged;
+            }
             InstalledSkins.Clear();
-            await _userPreferencesService.LoadPreferencesAsync();
-            var skinsFromPrefs = _userPreferencesService.GetInstalledSkins();
-            List<ChampionSummary>? champSummaries = null;
+
+            if (_userPreferencesService == null && !DesignerProperties.GetIsInDesignMode(new DependencyObject()))
+            {
+                IsLoadingSkinsList = false;
+                UpdateCanUninstall();
+                OnPropertyChanged(nameof(HasInstalledSkins));
+                return;
+            }
+            if (DesignerProperties.GetIsInDesignMode(new DependencyObject()))
+            {
+                IsLoadingSkinsList = false;
+                UpdateCanUninstall();
+                OnPropertyChanged(nameof(HasInstalledSkins));
+                return;
+            }
+
             try
             {
-                champSummaries = await CdragonDataService.GetChampionSummariesAsync();
-            }
-            catch (Exception ex) { FileLoggerService.Log($"[InstalledSkinsVM] Error loading champ summaries: {ex.Message}"); }
+                await _userPreferencesService.LoadPreferencesAsync();
+                var skinsFromPrefs = _userPreferencesService.GetInstalledSkins();
 
-            foreach (var skinInfo in skinsFromPrefs.OrderBy(s => s.SkinName).ThenBy(s => s.ChromaName))
-            {
-                var displaySkin = new InstalledSkinInfoDisplay(skinInfo);
-                if (champSummaries != null)
+                List<ChampionSummary>? champSummaries = await CdragonDataService.GetChampionSummariesAsync();
+                var championNameMap = champSummaries?.ToDictionary<ChampionSummary, int, string>(c => c.Id, c => c.Name) ?? new Dictionary<int, string>();
+
+                var displaySkinsList = new List<InstalledSkinInfoDisplay>();
+                foreach (var skinInfo in skinsFromPrefs.OrderBy(s => s.SkinName).ThenBy(s => s.ChromaName))
                 {
-                    var champ = champSummaries.FirstOrDefault(c => c.Id == skinInfo.ChampionId);
-                    displaySkin.ChampionName = champ?.Name ?? $"Champ ID: {skinInfo.ChampionId}";
+                    var displaySkin = new InstalledSkinInfoDisplay(skinInfo);
+                    if (championNameMap.TryGetValue(skinInfo.ChampionId, out string? champName))
+                    {
+                        displaySkin.ChampionName = champName;
+                    }
+                    else
+                    {
+                        displaySkin.ChampionName = $"Champ ID: {skinInfo.ChampionId}";
+                    }
+
+                    displaySkin.SelectionChanged += OnSkinSelectionChanged;
+                    displaySkinsList.Add(displaySkin);
                 }
-                InstalledSkins.Add(displaySkin);
+
+                Application.Current.Dispatcher.Invoke(() => {
+                    foreach (var skinDisplay in displaySkinsList)
+                    {
+                        InstalledSkins.Add(skinDisplay);
+                    }
+                    OnPropertyChanged(nameof(HasInstalledSkins));
+                    UpdateCanUninstall();
+                });
             }
-            OnPropertyChanged(nameof(HasInstalledSkins));
-            UninstallSelectedCommand.NotifyCanExecuteChanged();
-            IsLoadingSkinsList = false;
+            catch (Exception ex)
+            {
+                Application.Current.Dispatcher.InvokeAsync(async () => {
+                    var messageBox = new Wpf.Ui.Controls.MessageBox
+                    {
+                        Title = "Error Loading Skins",
+                        Content = $"Failed to load installed skins list: {ex.Message}",
+                        CloseButtonText = "OK"
+                    };
+                    await messageBox.ShowDialogAsync();
+                });
+            }
+            finally
+            {
+                IsLoadingSkinsList = false;
+            }
         }
 
         [RelayCommand(CanExecute = nameof(CanUninstallSelected))]
-        private async Task UninstallSelectedAsync()
+        private void UninstallSelected()
         {
-            var selected = InstalledSkins.Where(s => s.IsSelected).ToList();
-            if (!selected.Any()) return;
+            var selectedSkinsInfo = InstalledSkins.Where(s => s.IsSelected).Select(s => s.SkinInfo).ToList();
+            if (selectedSkinsInfo.Count == 0) return;
 
-            var confirmResult = await new Wpf.Ui.Controls.MessageBox
-            {
-                Title = "Confirm Uninstall",
-                Content = $"Are you sure you want to uninstall {selected.Count} selected skin(s)?",
-                PrimaryButtonText = "Uninstall",
-                CloseButtonText = "Cancel"
-            }.ShowDialogAsync();
+            _ = Task.Run(async () => {
+                var confirmResult = await Application.Current.Dispatcher.Invoke(async () =>
+                    await new Wpf.Ui.Controls.MessageBox
+                    {
+                        Title = "Confirm Uninstall",
+                        Content = $"Are you sure you want to uninstall {selectedSkinsInfo.Count} selected skin(s)?\nThis operation will stop the mod overlay and rebuild the game configuration.",
+                        PrimaryButtonText = "Uninstall",
+                        CloseButtonText = "Cancel",
+                        PrimaryButtonAppearance = Wpf.Ui.Controls.ControlAppearance.Danger
+                    }.ShowDialogAsync());
 
-            if (confirmResult != Wpf.Ui.Controls.MessageBoxResult.Primary) return;
-
-            _mainVM.IsGloballyLoading = true;
-            _mainVM.GlobalLoadingMessage = "Uninstalling skins...";
-            _modToolsService.StopRunOverlay();
-
-            foreach (var skinDisplay in selected)
-            {
-                string filePath = Path.Combine(_modToolsService.GetInstalledSkinsDirectory(), skinDisplay.Skin.FileName);
-                try
+                if (confirmResult == Wpf.Ui.Controls.MessageBoxResult.Primary)
                 {
-                    if (File.Exists(filePath)) File.Delete(filePath);
-                    FileLoggerService.Log($"[InstalledSkinsVM] Deleted file: {filePath}");
+                    Application.Current.Dispatcher.Invoke(() => {
+                        _mainVM.IsGloballyLoading = true;
+                        _mainVM.GlobalLoadingMessage = $"Uninstalling {selectedSkinsInfo.Count} skin(s)...";
+                    });
+
+                    try
+                    {
+                        await _modToolsService.QueueUninstallSkins(selectedSkinsInfo);
+
+                        await Application.Current.Dispatcher.InvokeAsync(async () =>
+                        {
+                            await _mainVM.ShowGlobalSuccess("Selected skins uninstalled.");
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Application.Current.Dispatcher.InvokeAsync(async () => {
+                            var errorMsgBox = new Wpf.Ui.Controls.MessageBox { Title = "Uninstall Failed", Content = $"Failed to queue skin uninstallation.\nError: {ex.Message}", CloseButtonText = "OK" };
+                            await errorMsgBox.ShowDialogAsync();
+                        });
+                    }
                 }
-                catch (Exception ex)
+                await Application.Current.Dispatcher.InvokeAsync(LoadInstalledSkinsAsync);
+            });
+        }
+
+        [RelayCommand(CanExecute = nameof(HasInstalledSkins))]
+        private void UninstallAll()
+        {
+            var allSkinsInfo = InstalledSkins.Select(s => s.SkinInfo).ToList();
+            if (allSkinsInfo.Count == 0) return;
+
+            _ = Task.Run(async () => {
+                var confirmResult = await Application.Current.Dispatcher.Invoke(async () =>
+                    await new Wpf.Ui.Controls.MessageBox
+                    {
+                        Title = "Confirm Uninstall All",
+                        Content = $"Are you sure you want to uninstall ALL installed skins ({allSkinsInfo.Count})?\nThis operation will stop the mod overlay and rebuild the game configuration.",
+                        PrimaryButtonText = "Uninstall All",
+                        CloseButtonText = "Cancel",
+                        PrimaryButtonAppearance = Wpf.Ui.Controls.ControlAppearance.Danger
+                    }.ShowDialogAsync());
+
+                if (confirmResult == Wpf.Ui.Controls.MessageBoxResult.Primary)
                 {
-                    FileLoggerService.Log($"[InstalledSkinsVM] Error deleting {filePath}: {ex.Message}");
+                    Application.Current.Dispatcher.Invoke(() => {
+                        _mainVM.IsGloballyLoading = true;
+                        _mainVM.GlobalLoadingMessage = $"Uninstalling all skins ({allSkinsInfo.Count})...";
+                    });
+
+                    try
+                    {
+                        await _modToolsService.QueueUninstallSkins(allSkinsInfo);
+
+                        await Application.Current.Dispatcher.InvokeAsync(async () =>
+                        {
+                            await _mainVM.ShowGlobalSuccess("All skins uninstalled.");
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Application.Current.Dispatcher.InvokeAsync(async () => {
+                            var errorMsgBox = new Wpf.Ui.Controls.MessageBox { Title = "Uninstall Failed", Content = $"Failed to uninstall all skins.\nError: {ex.Message}", CloseButtonText = "OK" };
+                            await errorMsgBox.ShowDialogAsync();
+                        });
+                    }
                 }
-                await _userPreferencesService.RemoveInstalledSkinAsync(skinDisplay.Skin.ChampionId, skinDisplay.Skin.SkinOrChromaId);
-            }
-
-            var remainingSkinsFiles = _userPreferencesService.GetInstalledSkins().Select(s => s.FileName).ToList();
-            if (remainingSkinsFiles.Any())
-            {
-                _mainVM.GlobalLoadingMessage = "Rebuilding overlay...";
-                var (overlaySuccess, overlayMsg) = await _modToolsService.MakeOverlayAsync(remainingSkinsFiles);
-                FileLoggerService.Log($"[InstalledSkinsVM] MakeOverlay after uninstall: {overlayMsg} (Success: {overlaySuccess})");
-                _modToolsService.StartRunOverlay();
-            }
-            else
-            {
-                FileLoggerService.Log("[InstalledSkinsVM] No skins left, overlay not rebuilt.");
-            }
-
-            await LoadInstalledSkinsAsync();
-            _mainVM.IsGloballyLoading = false;
-        }
-
-        [RelayCommand]
-        private async Task UninstallAllAsync()
-        {
-            if (!HasInstalledSkins) return;
-
-            var confirmResult = await new Wpf.Ui.Controls.MessageBox
-            {
-                Title = "Confirm Uninstall All",
-                Content = "Are you sure you want to uninstall ALL installed skins?",
-                PrimaryButtonText = "Uninstall All",
-                CloseButtonText = "Cancel",
-                PrimaryButtonAppearance = Wpf.Ui.Controls.ControlAppearance.Danger
-            }.ShowDialogAsync();
-
-            if (confirmResult != Wpf.Ui.Controls.MessageBoxResult.Primary) return;
-
-            _mainVM.IsGloballyLoading = true;
-            _mainVM.GlobalLoadingMessage = "Uninstalling all skins...";
-
-            _modToolsService.StopRunOverlay();
-            _modToolsService.ClearInstalledSkinsDirectory();
-            await _userPreferencesService.ClearAllInstalledSkinsAsync();
-
-            FileLoggerService.Log("[InstalledSkinsVM] All skins uninstalled. Overlay effectively cleared.");
-
-            await LoadInstalledSkinsAsync();
-            _mainVM.IsGloballyLoading = false;
-        }
-
-        [RelayCommand]
-        private async Task RefreshAsync()
-        {
-            await LoadInstalledSkinsAsync();
-        }
-
-        partial void OnIsLoadingSkinsListChanged(bool value)
-        {
-            OnPropertyChanged(nameof(HasInstalledSkins));
+                await Application.Current.Dispatcher.InvokeAsync(LoadInstalledSkinsAsync);
+            });
         }
     }
 }

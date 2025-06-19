@@ -1,24 +1,39 @@
-﻿/// skinhunter Start of Models\InstalledSkinInfoDisplay.cs ///
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System;
+using System.ComponentModel;
+
 namespace skinhunter.Models
 {
-    public partial class InstalledSkinInfoDisplay : ObservableObject // Asegúrate que ObservableObject está disponible o quítalo si no hay INPC
+    public partial class InstalledSkinInfoDisplay : ObservableObject
     {
-        public InstalledSkinInfo Skin { get; }
+        public InstalledSkinInfo SkinInfo { get; }
 
-        [ObservableProperty]
         private bool _isSelected;
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (SetProperty(ref _isSelected, value))
+                {
+                    SelectionChanged?.Invoke(this, EventArgs.Empty);
+                }
+            }
+        }
 
-        public string DisplayName => string.IsNullOrEmpty(Skin.ChromaName) || Skin.ChromaName.Equals("Default", StringComparison.OrdinalIgnoreCase)
-                                    ? Skin.SkinName
-                                    : $"{Skin.SkinName} ({Skin.ChromaName})";
-        public string FileName => Skin.FileName;
-        public string ImageUrl => Skin.ImageUrl;
+        public event EventHandler? SelectionChanged;
+
+        public string DisplayName => string.IsNullOrEmpty(SkinInfo.ChromaName) || SkinInfo.ChromaName.Equals("Default", StringComparison.OrdinalIgnoreCase)
+                                    ? SkinInfo.SkinName
+                                    : $"{SkinInfo.SkinName} ({SkinInfo.ChromaName})";
+        public string FileName => SkinInfo.FileName;
+        public string FolderName => SkinInfo.FolderName;
+        public string ImageUrl => SkinInfo.ImageUrl;
         public string ChampionName { get; set; } = "Unknown Champion";
 
-        public InstalledSkinInfoDisplay(InstalledSkinInfo skin)
+        public InstalledSkinInfoDisplay(InstalledSkinInfo skinInfo)
         {
-            Skin = skin;
+            SkinInfo = skinInfo;
         }
     }
 }
-/// skinhunter End of Models\InstalledSkinInfoDisplay.cs ///
