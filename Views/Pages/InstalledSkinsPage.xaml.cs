@@ -10,7 +10,7 @@ namespace skinhunter.Views.Pages
         public InstalledSkinsPage(InstalledSkinsViewModel viewModel)
         {
             ViewModel = viewModel;
-            DataContext = this;
+            DataContext = ViewModel;
             InitializeComponent();
         }
     }

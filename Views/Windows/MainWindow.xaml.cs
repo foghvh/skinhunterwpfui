@@ -5,11 +5,9 @@ using skinhunter.Views.Pages;
 using Wpf.Ui.Controls;
 using System;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using skinhunter.ViewModels.Pages;
 using Wpf.Ui.Abstractions;
-using System.Collections.Specialized;
+using Wpf.Ui.Abstractions.Controls;
+using System.Linq;
 
 namespace skinhunter.Views.Windows
 {
@@ -24,7 +22,7 @@ namespace skinhunter.Views.Windows
             INavigationViewPageProvider pageProvider)
         {
             ViewModel = viewModel;
-            DataContext = this;
+            DataContext = ViewModel;
 
             SystemThemeWatcher.Watch(this);
 
@@ -51,58 +49,30 @@ namespace skinhunter.Views.Windows
 
         private void OnNavigated(object sender, NavigatedEventArgs e)
         {
-            if (e.Page is FrameworkElement element)
+            if (e.Page is FrameworkElement { DataContext: ViewModelBase viewModel } page)
             {
-                ViewModel.SetCurrentPage(element.GetType());
-            }
+                ViewModel.CurrentPageViewModel = viewModel;
 
-            if (e.Page is ChampionGridPage)
-            {
-                var championGridVM = App.Services.GetRequiredService<ChampionGridPageViewModel>();
-                var headerGrid = new Grid { Margin = new Thickness(28, 12, 28, 0) };
-                headerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                headerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                var navigationView = sender as INavigationView;
+                var selectedItem = navigationView?.MenuItems.OfType<INavigationViewItem>().FirstOrDefault(i => i.TargetPageType == page.GetType())
+                                ?? navigationView?.FooterMenuItems.OfType<INavigationViewItem>().FirstOrDefault(i => i.TargetPageType == page.GetType());
 
-                var titleBlock = new System.Windows.Controls.TextBlock { Text = "Champions", FontSize = 24, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 15) };
-                headerGrid.Children.Add(titleBlock);
-                Grid.SetRow(titleBlock, 0);
-
-                var searchPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 20) };
-
-                var searchBox = new Wpf.Ui.Controls.TextBox { PlaceholderText = "Search Champions...", MinWidth = 250, Margin = new Thickness(0, 0, 15, 0), Height = 36, VerticalContentAlignment = VerticalAlignment.Center };
-                searchBox.Icon = new SymbolIcon(SymbolRegular.Search24);
-                searchBox.SetBinding(Wpf.Ui.Controls.TextBox.TextProperty, new Binding("SearchText") { Source = championGridVM, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged });
-                searchPanel.Children.Add(searchBox);
-
-                var roleLabel = new System.Windows.Controls.TextBlock { Text = "Role:", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(20, 0, 8, 0) };
-                searchPanel.Children.Add(roleLabel);
-
-                var roleComboBox = new ComboBox { MinWidth = 150, Height = 36, VerticalAlignment = VerticalAlignment.Center };
-                roleComboBox.SetBinding(ItemsControl.ItemsSourceProperty, new Binding("AllRoles") { Source = championGridVM });
-                roleComboBox.SetBinding(System.Windows.Controls.Primitives.Selector.SelectedItemProperty, new Binding("SelectedRole") { Source = championGridVM, Mode = BindingMode.TwoWay });
-                searchPanel.Children.Add(roleComboBox);
-
-                headerGrid.Children.Add(searchPanel);
-                Grid.SetRow(searchPanel, 1);
-
-                RootNavigation.Header = headerGrid;
-            }
-            else
-            {
-                RootNavigation.Header = null;
+                if (selectedItem != null)
+                {
+                    ViewModel.CurrentPageTitle = selectedItem.Content as string;
+                }
+                else if (page.GetType() != typeof(ChampionDetailPage))
+                {
+                    ViewModel.CurrentPageTitle = "Page";
+                }
             }
         }
 
         public INavigationView GetNavigation() => RootNavigation;
-
         public bool Navigate(Type pageType) => RootNavigation.Navigate(pageType);
-
         public void SetPageService(INavigationViewPageProvider pageProvider) => RootNavigation.SetPageProviderService(pageProvider);
-
         public void SetServiceProvider(IServiceProvider serviceProvider) => RootNavigation.SetServiceProvider(serviceProvider);
-
         public void ShowWindow() => Show();
-
         public void CloseWindow() => Close();
 
         protected override void OnClosed(EventArgs e)

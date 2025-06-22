@@ -15,18 +15,19 @@
     <Page.Resources>
         <ResourceDictionary>
             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
         </ResourceDictionary>
     </Page.Resources>
 
     <Grid>
         <ui:ProgressRing IsIndeterminate="True" HorizontalAlignment="Center" VerticalAlignment="Center"
-                         Visibility="{Binding ViewModel.IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}" />
+                         Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}" />
 
         <ScrollViewer x:Name="ChampionsScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="True"
-                      Visibility="{Binding ViewModel.IsLoading, Converter={StaticResource InverseBooleanToVisibilityConverter}, FallbackValue=Visible}">
-            <ItemsControl ItemsSource="{Binding ViewModel.ChampionsView}"
+                      Visibility="{Binding IsLoading, Converter={StaticResource InverseBooleanToVisibilityConverter}, FallbackValue=Visible}">
+            <ItemsControl ItemsSource="{Binding ChampionsView}"
                           VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
-                          HorizontalAlignment="Stretch" VerticalAlignment="Top">
+                          HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="28,12,28,20">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
@@ -41,7 +42,7 @@
                                 IsChevronVisible="False" 
                                 Cursor="Hand"
                                 BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
-                                Command="{Binding DataContext.ViewModel.SelectChampionCommand, RelativeSource={RelativeSource AncestorType={x:Type Page}}}"
+                                Command="{Binding DataContext.SelectChampionCommand, RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"
                                 CommandParameter="{Binding}">
                             <Grid>
                                 <Grid.RowDefinitions>

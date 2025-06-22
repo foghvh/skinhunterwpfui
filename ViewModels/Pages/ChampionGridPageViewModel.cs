@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows.Threading;
+using Wpf.Ui.Abstractions.Controls;
 
 namespace skinhunter.ViewModels.Pages
 {
@@ -15,6 +16,7 @@ namespace skinhunter.ViewModels.Pages
     {
         private readonly ICustomNavigationService _customNavigationService;
         private readonly ObservableCollection<ChampionSummary> _allChampions = new();
+        private bool _dataLoadedAtLeastOnce = false;
 
         [ObservableProperty]
         private string? _searchText;
@@ -27,11 +29,6 @@ namespace skinhunter.ViewModels.Pages
 
         public ICollectionView ChampionsView { get; }
 
-        [ObservableProperty]
-        private bool _showContentWithAnimation;
-
-        private bool _dataLoadedAtLeastOnce = false;
-
         public ChampionGridPageViewModel(ICustomNavigationService customNavigationService)
         {
             _customNavigationService = customNavigationService;
@@ -42,50 +39,25 @@ namespace skinhunter.ViewModels.Pages
 
         public async Task OnNavigatedToAsync()
         {
-            ShowContentWithAnimation = false;
+            IsLoading = true;
+            await Task.Delay(200);
 
-            if (!_dataLoadedAtLeastOnce || !_allChampions.Any())
+            if (!_dataLoadedAtLeastOnce)
             {
-                IsLoading = true;
                 await LoadChampionsAsync();
                 _dataLoadedAtLeastOnce = true;
             }
-            else
-            {
-                IsLoading = false;
-            }
 
-            if (!IsLoading)
-            {
-                ShowContentWithAnimation = true;
-            }
+            IsLoading = false;
         }
 
         public Task OnNavigatedFromAsync()
         {
-            ShowContentWithAnimation = false;
             return Task.CompletedTask;
         }
 
         public void OnNavigatedTo(object? parameter)
         {
-        }
-
-        public void ReleaseResourcesForTray()
-        {
-            IsLoading = true;
-            if (_allChampions.Any())
-            {
-                var championsToRelease = _allChampions.ToList();
-                System.Windows.Application.Current?.Dispatcher.Invoke(() => _allChampions.Clear());
-
-                foreach (var champ in championsToRelease)
-                {
-                    champ.ReleaseImage();
-                }
-                System.Windows.Application.Current?.Dispatcher.Invoke(() => ChampionsView?.Refresh());
-            }
-            IsLoading = false;
         }
 
         partial void OnSearchTextChanged(string? value)
@@ -158,8 +130,6 @@ namespace skinhunter.ViewModels.Pages
         [RelayCommand]
         public async Task LoadChampionsAsync()
         {
-            if (!IsLoading) IsLoading = true;
-
             var champs = await CdragonDataService.GetChampionSummariesAsync();
             if (champs != null)
             {
@@ -188,7 +158,6 @@ namespace skinhunter.ViewModels.Pages
                     await messageBox.ShowDialogAsync();
                 });
             }
-            IsLoading = false;
         }
 
         [RelayCommand]

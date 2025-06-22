@@ -1,191 +1,110 @@
-﻿using System.Collections.ObjectModel;
+﻿using skinhunter.Models;
 using skinhunter.Services;
 using skinhunter.ViewModels.Dialogs;
 using skinhunter.Views.Pages;
-using Wpf.Ui.Controls;
-using System.Windows.Data;
-using System.Linq;
-using System;
-using System.Windows;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
-using System.ComponentModel;
-using Wpf.Ui.Abstractions;
+using Wpf.Ui.Controls;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace skinhunter.ViewModels.Windows
 {
     public partial class MainWindowViewModel : ViewModelBase
     {
-        private readonly ICustomNavigationService? _customNavigationService;
-        private readonly AuthTokenManager _authTokenManager;
-        private readonly INavigationService _navigationService;
-        private readonly ModToolsService _modToolsService;
+        private readonly ICustomNavigationService _customNavigationService;
+        private readonly IServiceProvider _serviceProvider;
+        public OverlayToggleButtonViewModel OverlayViewModel { get; }
 
         [ObservableProperty]
-        private string _applicationTitle = "Skin Hunter";
+        private string _applicationTitle = "skinhunter";
 
         [ObservableProperty]
-        private object? _navigationHeader;
+        private ObservableCollection<object> _menuItemsSource = new();
 
         [ObservableProperty]
-        private Type? _currentPageType;
+        private ObservableCollection<object> _footerMenuItemsSource = new();
 
         [ObservableProperty]
-        private ObservableCollection<object> _menuItems;
-
-        [ObservableProperty]
-        private ObservableCollection<object> _footerMenuItems;
-
-        [ObservableProperty]
-        private ViewModelBase? _dialogViewModel;
+        private object? _dialogViewModel;
 
         [ObservableProperty]
         private OmnisearchViewModel? _omnisearchDialogViewModel;
 
         [ObservableProperty]
-        private bool _isAppAuthenticated;
-
-        [ObservableProperty]
         private bool _isGloballyLoading;
 
         [ObservableProperty]
-        private string _globalLoadingMessage = "Initializing...";
+        private string? _globalLoadingMessage;
 
         [ObservableProperty]
         private bool _isGlobalSuccessOverlayVisible;
 
         [ObservableProperty]
-        private string _globalSuccessMessage = "Success";
+        private string? _globalSuccessMessage;
 
         [ObservableProperty]
-        private ObservableCollection<string> _modToolsOutputLog = new();
+        [NotifyPropertyChangedFor(nameof(CurrentPageTitle))]
+        private ViewModelBase? _currentPageViewModel;
 
-        public OverlayToggleButtonViewModel OverlayButtonViewModel { get; }
+        [ObservableProperty]
+        private string? _currentPageTitle;
 
-        public MainWindowViewModel(
-            ICustomNavigationService customNavigationService,
-            AuthTokenManager authTokenManager,
-            INavigationService navigationService,
-            OverlayToggleButtonViewModel overlayButtonViewModel,
-            ModToolsService modToolsService)
+        public MainWindowViewModel(ICustomNavigationService customNavigationService, IServiceProvider serviceProvider, OverlayToggleButtonViewModel overlayViewModel)
         {
             _customNavigationService = customNavigationService;
-            _authTokenManager = authTokenManager;
-            _navigationService = navigationService;
-            _modToolsService = modToolsService;
-            OverlayButtonViewModel = overlayButtonViewModel;
-
-            _authTokenManager.PropertyChanged += AuthTokenManager_PropertyChanged;
-            OverlayButtonViewModel.OperationStarted += OnOverlayOperationStarted;
-            OverlayButtonViewModel.OperationCompleted += OnOverlayOperationCompleted;
-            _modToolsService.CommandOutputReceived += OnModToolsOutputReceived;
-
-            IsAppAuthenticated = _authTokenManager.IsAuthenticated;
-
-            _menuItems =
-            [
-                new NavigationViewItem { Content = "Home", Icon = new SymbolIcon(SymbolRegular.Home24), TargetPageType = typeof(ChampionGridPage) },
-                new NavigationViewItem { Content = "Installed", Icon = new SymbolIcon(SymbolRegular.Apps24), TargetPageType = typeof(InstalledSkinsPage) },
-                new NavigationViewItem { Content = "Search", Icon = new SymbolIcon(SymbolRegular.Search24), Command = new RelayCommand(() => _customNavigationService?.ShowOmnisearchDialog()) }
-            ];
-
-            _footerMenuItems =
-            [
-                new NavigationViewItem { Content = "Profile", Icon = new SymbolIcon(SymbolRegular.Person24), TargetPageType = typeof(ProfilePage) },
-                new NavigationViewItem { Content = "Settings", Icon = new SymbolIcon(SymbolRegular.Settings24), TargetPageType = typeof(SettingsPage) }
-            ];
-
-            UpdateMenuItemsEnabledState();
+            _serviceProvider = serviceProvider;
+            OverlayViewModel = overlayViewModel;
+            InitializeMenu();
         }
 
-        private void OnModToolsOutputReceived(string output)
+        private void InitializeMenu()
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            MenuItemsSource.Add(new NavigationViewItem()
             {
-                if (ModToolsOutputLog.Count > 0)
-                {
-                    ModToolsOutputLog.Clear();
-                }
-                ModToolsOutputLog.Add(output);
+                Content = "Home",
+                Icon = new SymbolIcon { Symbol = SymbolRegular.Home24 },
+                TargetPageType = typeof(ChampionGridPage)
+            });
+
+            MenuItemsSource.Add(new NavigationViewItem()
+            {
+                Content = "Installed",
+                Icon = new SymbolIcon { Symbol = SymbolRegular.Save24 },
+                TargetPageType = typeof(InstalledSkinsPage)
+            });
+
+            MenuItemsSource.Add(new NavigationViewItem()
+            {
+                Content = "Profile",
+                Icon = new SymbolIcon { Symbol = SymbolRegular.Person24 },
+                TargetPageType = typeof(ProfilePage)
+            });
+
+            FooterMenuItemsSource.Add(new NavigationViewItem()
+            {
+                Content = "Settings",
+                Icon = new SymbolIcon { Symbol = SymbolRegular.Settings24 },
+                TargetPageType = typeof(SettingsPage)
             });
         }
 
-        public void SetCurrentPage(Type pageType)
-        {
-            CurrentPageType = pageType;
-        }
-
-        private void OnOverlayOperationStarted(string message)
-        {
-            IsGloballyLoading = true;
-            GlobalLoadingMessage = message;
-            IsGlobalSuccessOverlayVisible = false;
-        }
-
-        private void OnOverlayOperationCompleted()
-        {
-            IsGloballyLoading = false;
-        }
-
-        public async Task ShowGlobalSuccess(string message, int displayTimeMs = 2500)
+        public async Task ShowGlobalSuccess(string message)
         {
             GlobalSuccessMessage = message;
             IsGlobalSuccessOverlayVisible = true;
-            IsGloballyLoading = false;
-            await Task.Delay(displayTimeMs);
+            await Task.Delay(2000);
             IsGlobalSuccessOverlayVisible = false;
         }
 
-        private void AuthTokenManager_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        [RelayCommand]
+        private async Task OpenOmnisearch()
         {
-            if (e.PropertyName == nameof(AuthTokenManager.IsAuthenticated))
+            if (OmnisearchDialogViewModel == null)
             {
-                IsAppAuthenticated = _authTokenManager.IsAuthenticated;
-                UpdateMenuItemsEnabledState();
-
-                if (IsAppAuthenticated)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        if (CurrentPageType == typeof(AuthenticationRequiredPage))
-                        {
-                            _navigationService.Navigate(typeof(ChampionGridPage));
-                        }
-                    });
-                }
+                var omnisearchVM = _serviceProvider.GetRequiredService<OmnisearchViewModel>();
+                OmnisearchDialogViewModel = omnisearchVM;
+                await omnisearchVM.EnsureDataLoadedAsync();
             }
-        }
-
-        private void UpdateMenuItemsEnabledState()
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                foreach (var item in _menuItems.Concat(_footerMenuItems))
-                {
-                    if (item is NavigationViewItem navItem)
-                    {
-                        bool isAuthDependent = navItem.TargetPageType != typeof(AuthenticationRequiredPage) &&
-                                               navItem.TargetPageType != typeof(SettingsPage) &&
-                                               navItem.TargetPageType != null;
-
-                        if (navItem.Command != null && navItem.TargetPageType == null)
-                        {
-                            if (navItem.Content as string == "Search")
-                            {
-                                isAuthDependent = true;
-                            }
-                        }
-
-                        navItem.IsEnabled = !isAuthDependent || IsAppAuthenticated;
-
-                        if (navItem.Command is IRelayCommand relayCommand)
-                        {
-                            relayCommand.NotifyCanExecuteChanged();
-                        }
-                    }
-                }
-
-                OverlayButtonViewModel.ToggleOverlayCommand.NotifyCanExecuteChanged();
-            });
         }
     }
 }

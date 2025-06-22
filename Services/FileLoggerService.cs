@@ -1,13 +1,13 @@
 ﻿using System.IO;
 using System.Runtime.CompilerServices;
-using System.Globalization;
+using System;
 
 namespace skinhunter.Services
 {
     public static class FileLoggerService
     {
         private static readonly string _logFilePath;
-        private static readonly object _lock = new object();
+        private static readonly object _lock = new();
 
         static FileLoggerService()
         {

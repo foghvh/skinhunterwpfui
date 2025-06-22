@@ -9,8 +9,8 @@ namespace skinhunter.ViewModels
 {
     public partial class OverlayToggleButtonViewModel : ViewModelBase, IDisposable
     {
-        private readonly ModToolsService _modToolsService;
-        private readonly UserPreferencesService _userPreferencesService;
+        private readonly ModToolsService? _modToolsService;
+        private readonly UserPreferencesService? _userPreferencesService;
 
         public event Action<string>? OperationStarted;
         public event Action? OperationCompleted;
@@ -27,6 +27,9 @@ namespace skinhunter.ViewModels
         [ObservableProperty]
         private bool _isUserBuyer;
 
+        [ObservableProperty]
+        private string? _statusText;
+
         public IAsyncRelayCommand ToggleOverlayCommand { get; }
 
         private OverlayToggleButtonViewModel()
@@ -35,10 +38,14 @@ namespace skinhunter.ViewModels
             {
                 Content = "Start Overlay (Design)";
                 Icon = SymbolRegular.Play24;
-                IsOverlayBusy = false;
                 IsUserBuyer = true;
+                StatusText = "Design Mode Status";
                 ToggleOverlayCommand = new AsyncRelayCommand(async () => await Task.CompletedTask, () => true);
                 UpdateState();
+            }
+            else
+            {
+                ToggleOverlayCommand = new AsyncRelayCommand(async () => await Task.CompletedTask, () => false);
             }
         }
 
@@ -48,15 +55,21 @@ namespace skinhunter.ViewModels
             {
                 _modToolsService = modToolsService;
                 _userPreferencesService = userPreferencesService;
-
                 ToggleOverlayCommand = new AsyncRelayCommand(ExecuteToggleOverlay, CanExecuteToggleOverlay);
-
                 _modToolsService.OverlayStatusChanged += OnOverlayStatusChanged;
+                _modToolsService.CommandOutputReceived += OnCommandOutputReceived;
                 _userPreferencesService.PropertyChanged += UserPreferencesService_PropertyChanged;
-
                 UpdateState();
                 UpdateUserState();
             }
+        }
+
+        private void OnCommandOutputReceived(string output)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                StatusText = output;
+            });
         }
 
         private void UserPreferencesService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -81,13 +94,13 @@ namespace skinhunter.ViewModels
 
         private async Task ExecuteToggleOverlay()
         {
-            if (!CanExecuteToggleOverlay()) return;
+            if (!CanExecuteToggleOverlay() || _modToolsService is null) return;
 
             IsOverlayBusy = true;
             ToggleOverlayCommand.NotifyCanExecuteChanged();
-
-            string operationMessage = _modToolsService.IsOverlayRunning ? "Stopping Overlay..." : "Starting Overlay...";
+            var operationMessage = _modToolsService.IsOverlayRunning ? "Stopping Overlay..." : "Starting Overlay...";
             OperationStarted?.Invoke(operationMessage);
+            StatusText = operationMessage;
 
             try
             {
@@ -100,29 +113,31 @@ namespace skinhunter.ViewModels
                     await _modToolsService.QueueRebuildWithInstalledSkins();
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
-                {
-                    var messageBox = new Wpf.Ui.Controls.MessageBox
-                    {
-                        Title = "Overlay Operation Failed",
-                        Content = $"An error occurred during the overlay toggle operation: {ex.Message}",
-                        CloseButtonText = "OK"
-                    };
-                    await messageBox.ShowDialogAsync();
-                });
             }
         }
 
         private void OnOverlayStatusChanged(bool isRunning)
         {
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            Application.Current.Dispatcher.Invoke(() =>
             {
                 UpdateState();
                 IsOverlayBusy = false;
+                StatusText = isRunning ? "Overlay is running" : "Overlay is stopped";
                 ToggleOverlayCommand?.NotifyCanExecuteChanged();
                 OperationCompleted?.Invoke();
+
+                _ = Task.Delay(4000).ContinueWith(_ =>
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        if (StatusText == "Overlay is running" || StatusText == "Overlay is stopped")
+                        {
+                            StatusText = null;
+                        }
+                    });
+                });
             });
         }
 
@@ -145,11 +160,13 @@ namespace skinhunter.ViewModels
             if (_modToolsService != null)
             {
                 _modToolsService.OverlayStatusChanged -= OnOverlayStatusChanged;
+                _modToolsService.CommandOutputReceived -= OnCommandOutputReceived;
             }
             if (_userPreferencesService != null)
             {
                 _userPreferencesService.PropertyChanged -= UserPreferencesService_PropertyChanged;
             }
+            GC.SuppressFinalize(this);
         }
     }
 }

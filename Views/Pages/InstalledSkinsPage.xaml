@@ -10,7 +10,6 @@
     xmlns:converters="clr-namespace:skinhunter.Converters"
     mc:Ignorable="d"
     d:DataContext="{d:DesignInstance Type=vm:InstalledSkinsViewModel, IsDesignTimeCreatable=True}"
-    DataContext="{Binding ViewModel, RelativeSource={RelativeSource Self}}"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     ScrollViewer.CanContentScroll="True">
     <Page.Resources>
@@ -28,82 +27,60 @@
     </Page.Resources>
 
     <Grid Margin="28,12,28,20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+        <ui:ProgressRing IsIndeterminate="True" Style="{StaticResource LoadingProgressRingStyle}"
+                         Visibility="{Binding IsLoadingSkinsList, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"/>
 
-        <TextBlock Grid.Row="0" Text="Installed Skins" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,15" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+        <TextBlock Text="No skins currently installed." FontSize="16" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,50,0,0">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding HasInstalledSkins}" Value="False"/>
+                                <Condition Binding="{Binding IsLoadingSkinsList}" Value="False"/>
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </MultiDataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,20"
-                    Visibility="{Binding HasInstalledSkins, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
-            <ui:Button Content="Uninstall Selected" Command="{Binding UninstallSelectedCommand}" Appearance="Danger" IsEnabled="{Binding CanUninstallSelected}">
-                <ui:Button.Icon>
-                    <ui:SymbolIcon Symbol="Delete24" />
-                </ui:Button.Icon>
-            </ui:Button>
-            <ui:Button Content="Uninstall All" Command="{Binding UninstallAllCommand}" Appearance="Secondary" Margin="10,0,0,0">
-                <ui:Button.Icon>
-                    <ui:SymbolIcon Symbol="DeleteDismiss24" />
-                </ui:Button.Icon>
-            </ui:Button>
-            <ui:Button Content="Refresh List" Command="{Binding RefreshCommand}" Appearance="Secondary" Margin="10,0,0,0">
-                <ui:Button.Icon>
-                    <ui:SymbolIcon Symbol="ArrowClockwise24" />
-                </ui:Button.Icon>
-            </ui:Button>
-        </StackPanel>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      Visibility="{Binding IsLoadingSkinsList, Converter={StaticResource InverseBooleanToVisibilityConverter}, FallbackValue=Visible}">
+            <ItemsControl ItemsSource="{Binding InstalledSkins}" Visibility="{Binding HasInstalledSkins, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Vertical"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type m:InstalledSkinInfoDisplay}">
+                        <Border BorderBrush="{DynamicResource ControlElevationBorderBrush}" BorderThickness="0,0,0,1" Margin="0,0,0,8" Padding="12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-        <Grid Grid.Row="2">
-            <ui:ProgressRing IsIndeterminate="True" Style="{StaticResource LoadingProgressRingStyle}"
-                             Visibility="{Binding IsLoadingSkinsList, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"/>
+                                <Border Grid.Column="0" Width="48" Height="48" CornerRadius="4" Margin="0,0,15,0">
+                                    <Image Source="{Binding ImageUrl}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="Fant"/>
+                                </Border>
 
-            <TextBlock Text="No skins currently installed." FontSize="16" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                       HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,50,0,0">
-                <TextBlock.Style>
-                    <Style TargetType="TextBlock">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding HasInstalledSkins}" Value="False"/>
-                                    <Condition Binding="{Binding IsLoadingSkinsList}" Value="False"/>
-                                </MultiDataTrigger.Conditions>
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </MultiDataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBlock.Style>
-            </TextBlock>
-
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                          Visibility="{Binding IsLoadingSkinsList, Converter={StaticResource InverseBooleanToVisibilityConverter}, FallbackValue=Visible}">
-                <ItemsControl ItemsSource="{Binding InstalledSkins}" Visibility="{Binding HasInstalledSkins, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type m:InstalledSkinInfoDisplay}">
-                            <Border BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4" Margin="8" Width="200">
-                                <StackPanel>
-                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" HorizontalAlignment="Right" Margin="0,5,5,0" ToolTipService.ToolTip="Select to uninstall"/>
-                                    <Image Source="{Binding ImageUrl}" Height="120" Stretch="Uniform" Margin="5" RenderOptions.BitmapScalingMode="Fant"/>
-                                    <Border Padding="10,5" Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}">
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding DisplayName}" FontWeight="Medium" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{Binding DisplayName}"/>
-                                            <TextBlock Text="{Binding ChampionName}" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Text="{Binding FileName}" FontSize="9" Foreground="{DynamicResource TextFillColorTertiaryBrush}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{Binding FileName}"/>
-                                        </StackPanel>
-                                    </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding DisplayName}" FontWeight="Medium" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding ChampionName}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-        </Grid>
+
+                                <CheckBox Grid.Column="2" IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
     </Grid>
 </Page>
