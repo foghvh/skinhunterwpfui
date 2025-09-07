@@ -1,0 +1,14 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/skinhunter/CopilotIndices/17.13.444.19527/CodeChunks.db
+/.vs/skinhunter/CopilotIndices/17.13.444.19527/SemanticSymbols.db
+/.vs/skinhunter/CopilotIndices/17.14.794.21998/CodeChunks.db
+/.vs/skinhunter/CopilotIndices/17.14.794.21998/SemanticSymbols.db
+/.vs/skinhunter/DesignTimeBuild/.dtbcache.v2
+*.vsidx
+*.log
+*.client
+/obj
+/bin/Debug/net9.0-windows
