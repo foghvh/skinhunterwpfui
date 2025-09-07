@@ -1,4 +1,4 @@
-﻿
+﻿// ViewModels/Pages/ProfileViewModel.cs
 using skinhunter.Services;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -9,6 +9,7 @@ namespace skinhunter.ViewModels.Pages
     public partial class ProfileViewModel : ViewModelBase, INavigationAware
     {
         private readonly UserPreferencesService _userPreferencesService;
+        private readonly MainWindowViewModel _mainWindowViewModel;
 
         [ObservableProperty]
         private string? _userName;
@@ -17,16 +18,21 @@ namespace skinhunter.ViewModels.Pages
         private string? _userAvatarFallback;
 
         [ObservableProperty]
-        private int _userCredits;
+        private string? _licenseStatus;
 
+        [ObservableProperty]
+        private bool? _isBuyer;
 
-        public ProfileViewModel(UserPreferencesService userPreferencesService)
+        public ProfileViewModel(UserPreferencesService userPreferencesService, MainWindowViewModel mainWindowViewModel)
         {
             _userPreferencesService = userPreferencesService;
+            _mainWindowViewModel = mainWindowViewModel;
         }
 
         public Task OnNavigatedToAsync()
         {
+            _mainWindowViewModel.CurrentPageTitle = "Profile";
+            _mainWindowViewModel.CurrentPageHeaderContent = null;
             IsLoading = true;
             var profile = _userPreferencesService.CurrentProfile;
 
@@ -34,13 +40,15 @@ namespace skinhunter.ViewModels.Pages
             {
                 UserName = profile.Login ?? profile.Id.ToString();
                 UserAvatarFallback = !string.IsNullOrEmpty(UserName) && UserName != "N/A" ? UserName[0].ToString().ToUpper() : "?";
-                UserCredits = 0;
+                IsBuyer = profile.IsBuyer;
+                LicenseStatus = profile.IsBuyer ? "Buyer" : "Standard User";
             }
             else
             {
                 UserName = "Not Authenticated";
                 UserAvatarFallback = "!";
-                UserCredits = 0;
+                IsBuyer = null;
+                LicenseStatus = "N/A";
             }
             FileLoggerService.Log($"[ProfileVM] Loaded. UserName from Profile Service: {UserName}");
             IsLoading = false;

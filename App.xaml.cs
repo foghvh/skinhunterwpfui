@@ -17,6 +17,8 @@ using skinhunter.Views.Windows;
 using System.Windows;
 using System;
 using Wpf.Ui.Abstractions;
+using skinhunter.Models;
+using skinhunter.Views.Components;
 
 namespace skinhunter
 {
@@ -35,31 +37,28 @@ namespace skinhunter
             })
             .ConfigureServices((context, services) =>
             {
-                // Register the Page Provider
                 services.AddNavigationViewPageProvider();
 
-                // Register Core Services
                 services.AddSingleton<INavigationService, NavigationService>();
                 services.AddSingleton<ISnackbarService, SnackbarService>();
                 services.AddSingleton<IContentDialogService, ContentDialogService>();
                 services.AddSingleton<IThemeService, ThemeService>();
                 services.AddSingleton<ITaskBarService, TaskBarService>();
 
-                // Register Application Host Service
                 services.AddHostedService<ApplicationHostService>();
 
-                // Register Custom Application Services
                 services.AddSingleton<ICustomNavigationService, CustomNavigationService>();
                 services.AddSingleton<AuthTokenManager>();
                 services.AddTransient<PipeClientService>();
                 services.AddSingleton<ModToolsService>();
                 services.AddSingleton<UserPreferencesService>();
+                services.AddSingleton<GlobalTaskService>();
 
-                // Register Supabase Client
                 services.AddSingleton(sp => {
                     var options = new Supabase.SupabaseOptions
                     {
-                        AutoRefreshToken = false,
+                        AutoRefreshToken = true,
+                        SessionHandler = new SupabaseSessionHandler()
                     };
                     return new Supabase.Client(
                         "https://odlqwkgewzxxmbsqutja.supabase.co",
@@ -67,20 +66,17 @@ namespace skinhunter
                         options);
                 });
 
-                // Register Main Window and its ViewModel
                 services.AddSingleton<MainWindow>();
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<INavigationWindow>(sp => sp.GetRequiredService<MainWindow>());
 
-                // Register Page ViewModels
-                services.AddSingleton<ChampionGridPageViewModel>();
-                services.AddSingleton<ChampionDetailPageViewModel>();
-                services.AddSingleton<InstalledSkinsViewModel>();
-                services.AddSingleton<ProfileViewModel>();
-                services.AddSingleton<SettingsViewModel>();
+                services.AddTransient<ChampionGridPageViewModel>();
+                services.AddTransient<ChampionDetailPageViewModel>();
+                services.AddTransient<InstalledSkinsViewModel>();
+                services.AddTransient<ProfileViewModel>();
+                services.AddTransient<SettingsViewModel>();
                 services.AddTransient<AuthenticationRequiredPageViewModel>();
 
-                // Register Pages
                 services.AddTransient<ChampionGridPage>();
                 services.AddTransient<ChampionDetailPage>();
                 services.AddTransient<InstalledSkinsPage>();
@@ -88,11 +84,16 @@ namespace skinhunter
                 services.AddTransient<SettingsPage>();
                 services.AddTransient<AuthenticationRequiredPage>();
 
-                // Register Dialog/Component ViewModels
+                // Register Header Components
+                services.AddTransient<ChampionGridPageHeader>();
+                services.AddTransient<InstalledSkinsPageHeader>();
+                services.AddTransient<ChampionDetailPageHeader>();
+                services.AddTransient<SettingsPageHeader>();
+                services.AddTransient<ProfilePageHeader>();
+
                 services.AddTransient<OmnisearchViewModel>();
                 services.AddTransient<SkinDetailViewModel>();
                 services.AddSingleton<OverlayToggleButtonViewModel>();
-
             }).Build();
 
         public static IServiceProvider Services => _host.Services;
@@ -115,8 +116,7 @@ namespace skinhunter
         private async void OnExit(object sender, ExitEventArgs e)
         {
             FileLoggerService.Log($"[App.OnExit] skinhunter exiting.");
-            var modToolsService = Services.GetService<ModToolsService>();
-            if (modToolsService != null)
+            if (Services.GetService(typeof(ModToolsService)) is ModToolsService modToolsService)
             {
                 await modToolsService.StopRunOverlayAsync();
             }

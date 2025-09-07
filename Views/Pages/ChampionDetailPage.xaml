@@ -41,34 +41,24 @@
             </Grid.Style>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
-                <ui:Button Command="{Binding GoBackCommand}" Appearance="Secondary" VerticalAlignment="Center">
-                    <ui:Button.Icon>
-                        <ui:SymbolIcon Symbol="ArrowLeft24" />
-                    </ui:Button.Icon>
-                </ui:Button>
-            </StackPanel>
-
-            <Border Grid.Row="1" Padding="20" Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="8" Margin="0,0,0,20" VerticalAlignment="Center" HorizontalAlignment="Center"
+            <Border Grid.Row="0" Padding="20" Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="8" Margin="0,0,0,20" VerticalAlignment="Center" HorizontalAlignment="Center"
                     Visibility="{Binding Champion, Converter={StaticResource NullToVisibilityConverter}}">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                    <Border Width="120" Height="120" CornerRadius="4" Margin="0,0,25,0" Background="{DynamicResource ControlFillColorTertiaryBrush}" ClipToBounds="True">
+                    <Border Width="80" Height="80" CornerRadius="4" Margin="0,0,25,0" Background="{DynamicResource ControlFillColorTertiaryBrush}" ClipToBounds="True">
                         <Image Source="{Binding Champion.ChampionImageSource}" Stretch="Uniform" RenderOptions.BitmapScalingMode="Fant"/>
                     </Border>
                     <StackPanel VerticalAlignment="Center" MaxWidth="600" HorizontalAlignment="Center">
                         <TextBlock Text="{Binding Champion.Name, FallbackValue='Champion Details'}" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,0,0" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                         <TextBlock Text="{Binding Champion.Title}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="18" FontStyle="Italic" Margin="0,0,0,8" TextWrapping="Wrap"/>
-                        <TextBlock Text="{Binding Champion.ShortBio}" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="14" TextWrapping="WrapWithOverflow"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
 
-            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="True">
-                <ItemsControl ItemsSource="{Binding Skins}"
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="True">
+                <ItemsControl ItemsSource="{Binding SkinsView}"
                               VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
                               HorizontalAlignment="Stretch">
                     <ItemsControl.ItemsPanel>

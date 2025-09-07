@@ -9,18 +9,10 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System;
 using System.Windows;
+using Wpf.Ui.Appearance;
 
 namespace skinhunter.Services
 {
-    public class UserPreferences
-    {
-        [JsonPropertyName("theme")]
-        public string? Theme { get; set; } = "dark";
-
-        [JsonPropertyName("installed_skins_info")]
-        public List<InstalledSkinInfo> InstalledSkins { get; set; } = [];
-    }
-
     public partial class UserPreferencesService : ObservableObject
     {
         private readonly AuthTokenManager _authTokenManager;
@@ -37,10 +29,13 @@ namespace skinhunter.Services
         [ObservableProperty]
         private Profile? _currentProfile;
 
+        public event Action? PreferencesChanged;
+
         public UserPreferencesService(AuthTokenManager authTokenManager)
         {
             _authTokenManager = authTokenManager;
-            _authTokenManager.PropertyChanged += async (s, e) => {
+            _authTokenManager.PropertyChanged += async (s, e) =>
+            {
                 if (e.PropertyName == nameof(AuthTokenManager.IsAuthenticated))
                 {
                     if (_authTokenManager.IsAuthenticated)
@@ -130,6 +125,10 @@ namespace skinhunter.Services
                 FileLoggerService.Log($"[UserPrefService] Exception loading profile: {ex.Message}");
                 UnloadPreferences();
             }
+            finally
+            {
+                PreferencesChanged?.Invoke();
+            }
         }
 
         private async Task CreateAndSaveDefaultProfile()
@@ -139,13 +138,16 @@ namespace skinhunter.Services
                 Id = _currentUserId!.Value,
                 Login = _authTokenManager.GetClaim("email")?.Split('@')[0] ?? "new_user",
                 IsBuyer = false,
-                Preferences = new()
+                Preferences = new Dictionary<string, object?>
                 {
                     { "theme", "dark" },
-                    { "installed_skins_info", new List<InstalledSkinInfo>() }
+                    { "sync_on_start", true },
+                    { "installed_skins_info", new List<InstalledSkinInfo>() },
+                    { "game_path", null },
+                    { "backdrop_type", "Mica" }
                 }
             };
-            _currentPreferences = new UserPreferences { InstalledSkins = [] };
+            _currentPreferences = new UserPreferences { InstalledSkins = [], SyncOnStart = true, Theme = "dark", BackdropType = "Mica" };
             await SaveProfileAsync(newProfile);
             Application.Current.Dispatcher.Invoke(() => { CurrentProfile = newProfile; });
         }
@@ -156,12 +158,14 @@ namespace skinhunter.Services
             CurrentProfile = null;
             _currentPreferences = new UserPreferences { InstalledSkins = [] };
             _currentUserId = null;
+            PreferencesChanged?.Invoke();
         }
 
-        public List<InstalledSkinInfo> GetInstalledSkins()
-        {
-            return _currentPreferences.InstalledSkins;
-        }
+        public List<InstalledSkinInfo> GetInstalledSkins() => _currentPreferences.InstalledSkins;
+        public bool GetSyncOnStart() => _currentPreferences.SyncOnStart;
+        public string? GetTheme() => _currentPreferences.Theme;
+        public string? GetGamePath() => _currentPreferences.GamePath;
+        public WindowBackdropType GetBackdropType() => Enum.TryParse<WindowBackdropType>(_currentPreferences.BackdropType, true, out var type) ? type : WindowBackdropType.Mica;
 
         public async Task AddInstalledSkinAsync(InstalledSkinInfo skinInfo)
         {
@@ -174,13 +178,11 @@ namespace skinhunter.Services
 
         public async Task RemoveInstalledSkinAsync(InstalledSkinInfo skinToRemove)
         {
-            if (CurrentProfile == null) return;
-            var prefs = _currentPreferences;
-            if (prefs.InstalledSkins == null) return;
-            int removedCount = prefs.InstalledSkins.RemoveAll(s => s.ChampionId == skinToRemove.ChampionId && s.SkinOrChromaId == skinToRemove.SkinOrChromaId);
+            if (CurrentProfile == null || _currentPreferences.InstalledSkins == null) return;
+            int removedCount = _currentPreferences.InstalledSkins.RemoveAll(s => s.ChampionId == skinToRemove.ChampionId && s.SkinOrChromaId == skinToRemove.SkinOrChromaId);
             if (removedCount > 0)
             {
-                await SavePreferencesAsync(prefs);
+                await SavePreferencesAsync(_currentPreferences);
             }
         }
 
@@ -188,12 +190,20 @@ namespace skinhunter.Services
         {
             var prefsToSave = preferencesToSave ?? _currentPreferences;
             if (CurrentProfile == null) return;
-            CurrentProfile.Preferences = new()
+
+            var preferencesDict = new Dictionary<string, object?>
             {
                 { "theme", prefsToSave.Theme },
-                { "installed_skins_info", prefsToSave.InstalledSkins ?? [] }
+                { "sync_on_start", prefsToSave.SyncOnStart },
+                { "installed_skins_info", prefsToSave.InstalledSkins ?? [] },
+                { "game_path", prefsToSave.GamePath },
+                { "backdrop_type", prefsToSave.BackdropType }
             };
+
+            CurrentProfile.Preferences = preferencesDict;
             await SaveProfileAsync(CurrentProfile);
+            _currentPreferences = prefsToSave;
+            PreferencesChanged?.Invoke();
         }
 
         private async Task SaveProfileAsync(Profile profileToSave)
@@ -205,7 +215,7 @@ namespace skinhunter.Services
                 using var httpClient = GetConfiguredHttpClient();
                 string requestUri = $"{_supabaseUrl}/rest/v1/profiles?id=eq.{_currentUserId.Value}";
                 string jsonPayload = JsonSerializer.Serialize(profileToSave, _jsonOptions);
-                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                var content = new StringContent(jsonPayload, System.Text.Encoding.UTF8, "application/json");
                 httpClient.DefaultRequestHeaders.Add("Prefer", "return=representation,resolution=merge-duplicates");
                 HttpResponseMessage response = await httpClient.PatchAsync(requestUri, content);
                 if (!response.IsSuccessStatusCode)

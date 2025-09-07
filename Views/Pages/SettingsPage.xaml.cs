@@ -1,5 +1,6 @@
 ﻿using skinhunter.ViewModels.Pages;
 using Wpf.Ui.Abstractions.Controls;
+using Wpf.Ui.Appearance;
 
 namespace skinhunter.Views.Pages
 {
@@ -10,8 +11,7 @@ namespace skinhunter.Views.Pages
         public SettingsPage(SettingsViewModel viewModel)
         {
             ViewModel = viewModel;
-            DataContext = this;
-
+            DataContext = ViewModel;
             InitializeComponent();
         }
     }

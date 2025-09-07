@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Controls;
+using Microsoft.Extensions.DependencyInjection;
+using skinhunter.Views.Components;
 
 namespace skinhunter.ViewModels.Pages
 {
@@ -15,7 +17,9 @@ namespace skinhunter.ViewModels.Pages
     {
         private readonly UserPreferencesService _userPreferencesService;
         private readonly ModToolsService _modToolsService;
-        private readonly MainWindowViewModel _mainVM;
+        private readonly ISnackbarService _snackbarService;
+        private readonly MainWindowViewModel _mainWindowViewModel;
+        private readonly IServiceProvider _serviceProvider;
 
         [ObservableProperty]
         private ObservableCollection<InstalledSkinInfoDisplay> _installedSkins = [];
@@ -29,11 +33,13 @@ namespace skinhunter.ViewModels.Pages
 
         public bool HasInstalledSkins => InstalledSkins.Any();
 
-        public InstalledSkinsViewModel(UserPreferencesService userPreferencesService, ModToolsService modToolsService, MainWindowViewModel mainWindowViewModel)
+        public InstalledSkinsViewModel(UserPreferencesService userPreferencesService, ModToolsService modToolsService, ISnackbarService snackbarService, MainWindowViewModel mainWindowViewModel, IServiceProvider serviceProvider)
         {
             _userPreferencesService = userPreferencesService;
             _modToolsService = modToolsService;
-            _mainVM = mainWindowViewModel;
+            _snackbarService = snackbarService;
+            _mainWindowViewModel = mainWindowViewModel;
+            _serviceProvider = serviceProvider;
         }
 
         private void UpdateCanUninstall()
@@ -47,6 +53,12 @@ namespace skinhunter.ViewModels.Pages
 
         public async Task OnNavigatedToAsync()
         {
+            _mainWindowViewModel.CurrentPageTitle = "Installed";
+
+            var header = _serviceProvider.GetRequiredService<InstalledSkinsPageHeader>();
+            header.DataContext = this;
+            _mainWindowViewModel.CurrentPageHeaderContent = header;
+
             IsLoadingSkinsList = true;
             await Task.Delay(200);
             await LoadInstalledSkinsAsync();
@@ -82,7 +94,12 @@ namespace skinhunter.ViewModels.Pages
         {
             try
             {
+                foreach (var skinDisplay in InstalledSkins)
+                {
+                    skinDisplay.SelectionChanged -= OnSkinSelectionChanged;
+                }
                 InstalledSkins.Clear();
+
                 await _userPreferencesService.LoadPreferencesAsync();
                 var skinsFromPrefs = _userPreferencesService.GetInstalledSkins();
                 var champSummaries = await CdragonDataService.GetChampionSummariesAsync();
@@ -123,10 +140,7 @@ namespace skinhunter.ViewModels.Pages
 
             if (result == Wpf.Ui.Controls.MessageBoxResult.Primary)
             {
-                _mainVM.IsGloballyLoading = true;
-                _mainVM.GlobalLoadingMessage = $"Uninstalling {selectedSkinsInfo.Count} skin(s)...";
-                await _modToolsService.QueueUninstallSkins(selectedSkinsInfo);
-                await _mainVM.ShowGlobalSuccess("Selected skins uninstalled.");
+                await _modToolsService.QueueUninstallSkins(selectedSkinsInfo, _snackbarService);
                 await RefreshCommand();
             }
         }
@@ -141,10 +155,7 @@ namespace skinhunter.ViewModels.Pages
 
             if (result == Wpf.Ui.Controls.MessageBoxResult.Primary)
             {
-                _mainVM.IsGloballyLoading = true;
-                _mainVM.GlobalLoadingMessage = "Uninstalling all skins...";
-                await _modToolsService.QueueUninstallSkins(allSkinsInfo);
-                await _mainVM.ShowGlobalSuccess("All skins uninstalled.");
+                await _modToolsService.QueueUninstallSkins(allSkinsInfo, _snackbarService);
                 await RefreshCommand();
             }
         }

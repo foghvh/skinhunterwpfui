@@ -7,9 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using Supabase;
-using System.IO;
 using System;
 using System.Windows;
+using Wpf.Ui.Controls;
 
 namespace skinhunter.ViewModels.Dialogs
 {
@@ -19,6 +19,7 @@ namespace skinhunter.ViewModels.Dialogs
         private readonly UserPreferencesService _userPreferencesService;
         private readonly Client _supabaseClient;
         private readonly ModToolsService _modToolsService;
+        private readonly ISnackbarService _snackbarService;
 
         [ObservableProperty]
         private Skin? _selectedSkin;
@@ -55,12 +56,14 @@ namespace skinhunter.ViewModels.Dialogs
             ICustomNavigationService customNavigationService,
             UserPreferencesService userPreferencesService,
             Client supabaseClient,
-            ModToolsService modToolsService)
+            ModToolsService modToolsService,
+            ISnackbarService snackbarService)
         {
             _customNavigationService = customNavigationService;
             _userPreferencesService = userPreferencesService;
             _supabaseClient = supabaseClient;
             _modToolsService = modToolsService;
+            _snackbarService = snackbarService;
 
             _userPreferencesService.PropertyChanged += (_, e) => {
                 if (e.PropertyName == nameof(UserPreferencesService.CurrentProfile))
@@ -87,13 +90,12 @@ namespace skinhunter.ViewModels.Dialogs
             await CdragonDataService.EnrichSkinWithSupabaseChromaDataAsync(skin);
 
             AvailableChromas.Clear();
-            if (skin.Chromas != null && skin.Chromas.Count > 0)
+            if (skin.Chromas != null && skin.Chromas.Any())
             {
                 foreach (var chroma in skin.Chromas)
                 {
                     if (chroma != null)
                     {
-                        chroma.IsSelected = false;
                         AvailableChromas.Add(chroma);
                     }
                 }
@@ -107,65 +109,50 @@ namespace skinhunter.ViewModels.Dialogs
 
         public bool CanDownloadExecute()
         {
-            var mainVM = App.Services.GetRequiredService<MainWindowViewModel>();
-            return CanUserDownload && SelectedSkin != null && !IsLoading && !mainVM.IsGloballyLoading;
+            return CanUserDownload && SelectedSkin != null && !IsLoading;
         }
 
         [RelayCommand(CanExecute = nameof(CanDownloadExecute))]
-        private void DownloadSkin()
+        private async Task DownloadSkin()
         {
             if (SelectedSkin == null) return;
 
-            _ = Task.Run(async () =>
+            var installedSkins = _userPreferencesService.GetInstalledSkins();
+            var existingSkinForChampion = installedSkins.FirstOrDefault(s => s.ChampionId == SelectedSkin.ChampionId);
+            bool proceed = true;
+
+            if (existingSkinForChampion != null)
             {
-                var installedSkins = _userPreferencesService.GetInstalledSkins();
-                var existingSkinForChampion = installedSkins.FirstOrDefault(s => s.ChampionId == SelectedSkin.ChampionId);
-                bool proceed = true;
-
-                if (existingSkinForChampion != null)
+                proceed = false;
+                string existingSkinDisplayName = string.IsNullOrEmpty(existingSkinForChampion.ChromaName) ? existingSkinForChampion.SkinName : $"{existingSkinForChampion.SkinName} ({existingSkinForChampion.ChromaName})";
+                var confirmResult = await Application.Current.Dispatcher.Invoke(async () =>
+                    await new Wpf.Ui.Controls.MessageBox
+                    {
+                        Title = "Warning",
+                        Content = $"You already have '{existingSkinDisplayName}' installed for this champion.\nInstalling a new skin will replace it. Do you want to continue?",
+                        PrimaryButtonText = "Continue",
+                        CloseButtonText = "Cancel"
+                    }.ShowDialogAsync());
+                if (confirmResult == Wpf.Ui.Controls.MessageBoxResult.Primary)
                 {
-                    proceed = false;
-                    string existingSkinDisplayName = string.IsNullOrEmpty(existingSkinForChampion.ChromaName) ? existingSkinForChampion.SkinName : $"{existingSkinForChampion.SkinName} ({existingSkinForChampion.ChromaName})";
-                    var confirmResult = await Application.Current.Dispatcher.Invoke(async () =>
-                        await new Wpf.Ui.Controls.MessageBox
-                        {
-                            Title = "Warning",
-                            Content = $"You already have '{existingSkinDisplayName}' installed for this champion.\nInstalling a new skin will replace it. Do you want to continue?",
-                            PrimaryButtonText = "Continue",
-                            CloseButtonText = "Cancel"
-                        }.ShowDialogAsync());
-                    if (confirmResult == Wpf.Ui.Controls.MessageBoxResult.Primary)
-                    {
-                        proceed = true;
-                    }
+                    proceed = true;
                 }
+            }
 
-                if (proceed)
+            if (proceed)
+            {
+                Application.Current.Dispatcher.Invoke(CloseDialog);
+
+                try
                 {
-                    Application.Current.Dispatcher.Invoke(CloseDialog);
-                    var mainVM = App.Services.GetRequiredService<MainWindowViewModel>();
-                    mainVM.IsGloballyLoading = true;
-                    mainVM.GlobalLoadingMessage = "Downloading skin...";
-
-                    try
-                    {
-                        await DownloadAndQueueInstall();
-                        await mainVM.ShowGlobalSuccess("Skin installation queued! The process will run in the background.");
-                    }
-                    catch (Exception ex)
-                    {
-                        FileLoggerService.Log($"[SkinDetailVM] Download failed: {ex.Message}\n{ex.StackTrace}");
-                        await Application.Current.Dispatcher.InvokeAsync(async () => {
-                            var errorMsgBox = new Wpf.Ui.Controls.MessageBox { Title = "Download Failed", Content = $"Failed to download skin.\nError: {ex.Message}", CloseButtonText = "OK" };
-                            await errorMsgBox.ShowDialogAsync();
-                        });
-                    }
-                    finally
-                    {
-                        mainVM.IsGloballyLoading = false;
-                    }
+                    await DownloadAndQueueInstall();
                 }
-            });
+                catch (Exception ex)
+                {
+                    FileLoggerService.Log($"[SkinDetailVM] Download failed: {ex.Message}\n{ex.StackTrace}");
+                    _snackbarService.Show("Download Failed", $"Failed to download skin: {ex.Message}", ControlAppearance.Danger, new SymbolIcon(SymbolRegular.ErrorCircle24), TimeSpan.FromSeconds(7));
+                }
+            }
         }
 
         private async Task DownloadAndQueueInstall()
@@ -189,9 +176,11 @@ namespace skinhunter.ViewModels.Dialogs
                 supabasePath = $"campeones/{skinToInstall.ChampionId}/{skinNum}.fantome";
             }
 
-            byte[]? fileBytes = await _supabaseClient.Storage.From("campeones").Download(supabasePath, null);
+            _snackbarService.Show("Downloading...", $"Downloading '{skinToInstall.Name}'...", ControlAppearance.Secondary, new SymbolIcon(SymbolRegular.ArrowDownload24), TimeSpan.FromSeconds(15));
 
-            if (fileBytes == null || fileBytes.Length == 0)
+            byte[]? fantomeBytes = await _supabaseClient.Storage.From("campeones").Download(supabasePath, null);
+
+            if (fantomeBytes == null || fantomeBytes.Length == 0)
             {
                 throw new Exception($"Failed to download from Supabase Storage or file is empty. Path: {supabasePath}");
             }
@@ -208,7 +197,7 @@ namespace skinhunter.ViewModels.Dialogs
                 InstalledAt = DateTime.UtcNow
             };
 
-            await _modToolsService.QueueInstallAndRebuild(installedInfo, fileBytes);
+            await _modToolsService.QueueInstallAndRebuild(installedInfo, fantomeBytes, _snackbarService);
         }
 
         private static string SanitizeFileName(string name)

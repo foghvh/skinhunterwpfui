@@ -1,89 +1,95 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Threading;
-using System.Threading.Tasks;
 using skinhunter.Views.Pages;
 using System;
 using System.Windows;
 using skinhunter.ViewModels.Windows;
+using Supabase;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace skinhunter.Services
 {
-    public class ApplicationHostService(IServiceProvider serviceProvider) : IHostedService
+    public class ApplicationHostService : IHostedService
     {
+        private readonly IServiceProvider _serviceProvider;
         private INavigationWindow? _navigationWindow;
+
+        public ApplicationHostService(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await Application.Current.Dispatcher.InvokeAsync(async () =>
             {
-                var mainVM = serviceProvider.GetRequiredService<MainWindowViewModel>();
+                var mainVM = _serviceProvider.GetRequiredService<MainWindowViewModel>();
                 mainVM.IsGloballyLoading = true;
-                mainVM.GlobalLoadingMessage = "Initializing...";
-
-                _navigationWindow = serviceProvider.GetRequiredService<INavigationWindow>();
+                _navigationWindow = _serviceProvider.GetRequiredService<INavigationWindow>();
                 _navigationWindow.ShowWindow();
+                await InitializeApplicationAsync(cancellationToken);
             });
-
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    var authTokenManager = serviceProvider.GetRequiredService<AuthTokenManager>();
-                    var navigationService = serviceProvider.GetRequiredService<INavigationService>();
-
-                    string? receivedToken = null;
-                    if (!string.IsNullOrEmpty(App.InitialPipeName))
-                    {
-                        await SetGlobalLoadingMessageAsync("Authenticating...");
-                        var pipeClient = serviceProvider.GetRequiredService<PipeClientService>();
-                        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
-                        receivedToken = await pipeClient.RequestTokenFromServerAsync(App.InitialPipeName, cts.Token);
-                    }
-
-                    bool isAuthenticated = !string.IsNullOrEmpty(receivedToken) && authTokenManager.SetToken(receivedToken);
-
-                    if (isAuthenticated)
-                    {
-                        await SetGlobalLoadingMessageAsync("Loading user profile...");
-                        var userPrefsService = serviceProvider.GetRequiredService<UserPreferencesService>();
-                        await Application.Current.Dispatcher.InvokeAsync(userPrefsService.LoadPreferencesAsync);
-
-                        await SetGlobalLoadingMessageAsync("Preparing mods...");
-                        var modToolsService = serviceProvider.GetRequiredService<ModToolsService>();
-                        await modToolsService.QueueRebuildWithInstalledSkins();
-
-                        await Application.Current.Dispatcher.InvokeAsync(() => navigationService.Navigate(typeof(ChampionGridPage)));
-                    }
-                    else
-                    {
-                        await Application.Current.Dispatcher.InvokeAsync(() => navigationService.Navigate(typeof(AuthenticationRequiredPage)));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    FileLoggerService.Log($"[AppHostService] Critical startup error: {ex}");
-                }
-                finally
-                {
-                    await SetGlobalLoadingMessageAsync("", false);
-                }
-            }, cancellationToken);
         }
 
-        private async Task SetGlobalLoadingMessageAsync(string message, bool isLoading = true)
+        private async Task InitializeApplicationAsync(CancellationToken cancellationToken)
         {
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            var supabaseClient = _serviceProvider.GetRequiredService<Client>();
+            var authTokenManager = _serviceProvider.GetRequiredService<AuthTokenManager>();
+            var navigationService = _serviceProvider.GetRequiredService<INavigationService>();
+            var userPrefsService = _serviceProvider.GetRequiredService<UserPreferencesService>();
+            var modToolsService = _serviceProvider.GetRequiredService<ModToolsService>();
+            var mainVM = _serviceProvider.GetRequiredService<MainWindowViewModel>();
+
+            bool isAuthenticated = false;
+
+            mainVM.GlobalLoadingMessage = "Loading session...";
+            await supabaseClient.InitializeAsync();
+
+            if (supabaseClient.Auth.CurrentSession?.AccessToken != null)
             {
-                var mainVM = serviceProvider.GetRequiredService<MainWindowViewModel>();
-                mainVM.GlobalLoadingMessage = message;
-                mainVM.IsGloballyLoading = isLoading;
-            });
+                authTokenManager.SetToken(supabaseClient.Auth.CurrentSession.AccessToken);
+                isAuthenticated = true;
+            }
+            else if (!string.IsNullOrEmpty(App.InitialPipeName))
+            {
+                mainVM.GlobalLoadingMessage = "Authenticating...";
+                var pipeClient = _serviceProvider.GetRequiredService<PipeClientService>();
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
+                string? receivedToken = await pipeClient.RequestTokenFromServerAsync(App.InitialPipeName, cts.Token);
+
+                if (!string.IsNullOrEmpty(receivedToken))
+                {
+                    authTokenManager.SetToken(receivedToken);
+                    isAuthenticated = true;
+                }
+            }
+
+            if (cancellationToken.IsCancellationRequested) return;
+
+            if (isAuthenticated)
+            {
+                mainVM.GlobalLoadingMessage = "Loading user profile...";
+                await userPrefsService.LoadPreferencesAsync();
+
+                navigationService.Navigate(typeof(ChampionGridPage));
+
+                if (userPrefsService.GetSyncOnStart())
+                {
+                    mainVM.GlobalLoadingMessage = "Synchronizing skins...";
+                    await modToolsService.QueueSyncAndRebuild();
+                }
+            }
+            else
+            {
+                navigationService.Navigate(typeof(AuthenticationRequiredPage));
+            }
+            mainVM.IsGloballyLoading = false;
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            var modToolsService = serviceProvider.GetRequiredService<ModToolsService>();
+            var modToolsService = _serviceProvider.GetRequiredService<ModToolsService>();
             await modToolsService.StopRunOverlayAsync();
             await Application.Current.Dispatcher.InvokeAsync(Application.Current.Shutdown);
         }

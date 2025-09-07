@@ -7,24 +7,110 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:skinhunter.ViewModels.Pages"
     xmlns:m="clr-namespace:skinhunter.Models"
-    xmlns:converters="clr-namespace:skinhunter.Converters"
     mc:Ignorable="d"
     d:DataContext="{d:DesignInstance Type=vm:ChampionGridPageViewModel, IsDesignTimeCreatable=False}"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     ScrollViewer.CanContentScroll="True">
-    <Page.Resources>
-        <ResourceDictionary>
-            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-            <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
-        </ResourceDictionary>
-    </Page.Resources>
 
     <Grid>
-        <ui:ProgressRing IsIndeterminate="True" HorizontalAlignment="Center" VerticalAlignment="Center"
-                         Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}" />
+        <ItemsControl x:Name="SkeletonGrid" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="28,12,28,20">
+            <ItemsControl.Style>
+                <Style TargetType="ItemsControl">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ItemsControl.Style>
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <DataTemplate.Resources>
+                        <Storyboard x:Key="ShimmerStoryboard" RepeatBehavior="Forever">
+                            <DoubleAnimation Storyboard.TargetName="ShimmerTranslate" Storyboard.TargetProperty="X" From="-100" To="200" Duration="0:0:1.5" />
+                        </Storyboard>
+                    </DataTemplate.Resources>
+                    <Border Margin="8" Width="100" Height="120" Background="{DynamicResource ControlFillColorSecondaryBrush}" CornerRadius="6" ClipToBounds="True">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="80"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Rectangle Grid.Row="0" Fill="{DynamicResource ControlFillColorTertiaryBrush}" Margin="5"/>
+                            <Rectangle Grid.Row="1" Fill="{DynamicResource ControlFillColorTertiaryBrush}" Height="12" Width="60" Margin="0,5,0,23"/>
+                            <Rectangle Fill="{DynamicResource SystemAccentColorSecondaryBrush}" Opacity="0.1">
+                                <Rectangle.RenderTransform>
+                                    <TranslateTransform x:Name="ShimmerTranslate" />
+                                </Rectangle.RenderTransform>
+                            </Rectangle>
+                        </Grid>
+                        <Border.Triggers>
+                            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                                <BeginStoryboard Storyboard="{StaticResource ShimmerStoryboard}"/>
+                            </EventTrigger>
+                        </Border.Triggers>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+            <ItemsControl.ItemsSource>
+                <x:Array Type="sys:Object" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                </x:Array>
+            </ItemsControl.ItemsSource>
+        </ItemsControl>
 
-        <ScrollViewer x:Name="ChampionsScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="True"
-                      Visibility="{Binding IsLoading, Converter={StaticResource InverseBooleanToVisibilityConverter}, FallbackValue=Visible}">
+        <ScrollViewer x:Name="ChampionsScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="True">
+            <ScrollViewer.Style>
+                <Style TargetType="ScrollViewer">
+                    <Setter Property="Opacity" Value="0"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsLoading}" Value="False">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.4" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ScrollViewer.Style>
             <ItemsControl ItemsSource="{Binding ChampionsView}"
                           VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
                           HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="28,12,28,20">
@@ -36,10 +122,10 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type m:ChampionSummary}">
                         <ui:CardAction
-                                Padding="0" Margin="8" Width="100" Height="120" 
+                                Padding="0" Margin="8" Width="100" Height="120"
                                 HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                                  BorderThickness="1"
-                                IsChevronVisible="False" 
+                                IsChevronVisible="False"
                                 Cursor="Hand"
                                 BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
                                 Command="{Binding DataContext.SelectChampionCommand, RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"
@@ -55,7 +141,7 @@
                                 </Border>
                                 <Border Grid.Row="1" Padding="8,5" MinHeight="40"  CornerRadius="0,0,5,5">
                                     <TextBlock Text="{Binding Name}" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                FontSize="12" 
+                                                FontSize="12"
                                                TextTrimming="CharacterEllipsis" TextAlignment="Center" TextWrapping="Wrap"/>
                                 </Border>
                             </Grid>

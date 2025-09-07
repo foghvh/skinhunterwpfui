@@ -1,11 +1,10 @@
-﻿using skinhunter.Models;
-using skinhunter.Services;
+﻿using skinhunter.Services;
 using skinhunter.ViewModels.Dialogs;
 using skinhunter.Views.Pages;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
-using Wpf.Ui.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using Wpf.Ui.Controls;
 
 namespace skinhunter.ViewModels.Windows
 {
@@ -16,7 +15,7 @@ namespace skinhunter.ViewModels.Windows
         public OverlayToggleButtonViewModel OverlayViewModel { get; }
 
         [ObservableProperty]
-        private string _applicationTitle = "skinhunter";
+        private string _applicationTitle = "Predator";
 
         [ObservableProperty]
         private ObservableCollection<object> _menuItemsSource = new();
@@ -43,11 +42,27 @@ namespace skinhunter.ViewModels.Windows
         private string? _globalSuccessMessage;
 
         [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(CurrentPageTitle))]
+        private bool _isGlobalErrorOverlayVisible;
+
+        [ObservableProperty]
+        private string? _globalErrorMessage;
+
+        [ObservableProperty]
         private ViewModelBase? _currentPageViewModel;
 
         [ObservableProperty]
+        private bool _isBackButtonVisible;
+
+        [ObservableProperty]
         private string? _currentPageTitle;
+
+        [ObservableProperty]
+        private object? _currentPageHeaderContent;
+
+        partial void OnCurrentPageViewModelChanged(ViewModelBase? value)
+        {
+            IsBackButtonVisible = value is ChampionDetailPageViewModel;
+        }
 
         public MainWindowViewModel(ICustomNavigationService customNavigationService, IServiceProvider serviceProvider, OverlayToggleButtonViewModel overlayViewModel)
         {
@@ -88,12 +103,26 @@ namespace skinhunter.ViewModels.Windows
             });
         }
 
+        [RelayCommand]
+        private void GoBack()
+        {
+            _customNavigationService.GoBack();
+        }
+
         public async Task ShowGlobalSuccess(string message)
         {
             GlobalSuccessMessage = message;
             IsGlobalSuccessOverlayVisible = true;
             await Task.Delay(2000);
             IsGlobalSuccessOverlayVisible = false;
+        }
+
+        public async Task ShowGlobalError(string message)
+        {
+            GlobalErrorMessage = message;
+            IsGlobalErrorOverlayVisible = true;
+            await Task.Delay(3000);
+            IsGlobalErrorOverlayVisible = false;
         }
 
         [RelayCommand]

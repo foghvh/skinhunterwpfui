@@ -185,7 +185,7 @@
                     <ui:Button Content="{Binding SelectedChroma, Converter={StaticResource ChromaToButtonTextConverter}, FallbackValue='Download Skin'}"
                              Appearance="Primary" HorizontalAlignment="Right" Width="150"
                              Command="{Binding DownloadSkinCommand}"
-                             IsEnabled="{Binding CanDownload}">
+                             IsEnabled="{Binding CanUserDownload}">
                         <ui:Button.Icon>
                             <ui:SymbolIcon Symbol="ArrowDownload24" Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
                         </ui:Button.Icon>

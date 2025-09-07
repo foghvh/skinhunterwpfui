@@ -18,6 +18,9 @@
 		<Content Include="Assets\icon.ico">
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
+		<Content Include="Assets\predator.ico">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
 		<Content Include="Tools\cslol-tools\cslol-dll.dll">
 		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
@@ -40,6 +43,7 @@
 	<ItemGroup>
 		<!-- Imágenes -->
 		<None Remove="Assets\icon.ico" />
+		<None Remove="Assets\predator.ico" />
 		<None Remove="Assets\wpfui-icon-256.png" />
 		<None Remove="Assets\wpfui-icon-1024.png" />
 		<None Remove="Assets\logo.png" />

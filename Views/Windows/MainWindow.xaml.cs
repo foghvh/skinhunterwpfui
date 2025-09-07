@@ -8,27 +8,36 @@ using System.Windows;
 using Wpf.Ui.Abstractions;
 using Wpf.Ui.Abstractions.Controls;
 using System.Linq;
+using Wpf.Ui.Animations;
+using Wpf.Ui.Appearance;
 
 namespace skinhunter.Views.Windows
 {
     public partial class MainWindow : INavigationWindow
     {
         public MainWindowViewModel ViewModel { get; }
+        private readonly UserPreferencesService _userPreferencesService;
 
         public MainWindow(
             MainWindowViewModel viewModel,
             IServiceProvider serviceProvider,
             INavigationService navigationService,
+            ISnackbarService snackbarService,
             INavigationViewPageProvider pageProvider)
         {
             ViewModel = viewModel;
             DataContext = ViewModel;
+            _userPreferencesService = serviceProvider.GetRequiredService<UserPreferencesService>();
 
             SystemThemeWatcher.Watch(this);
 
             InitializeComponent();
 
+            ApplyBackdropPreference();
+            _userPreferencesService.PreferencesChanged += OnPreferencesChanged;
+
             navigationService.SetNavigationControl(RootNavigation);
+            snackbarService.SetSnackbarPresenter(SnackbarPresenter);
             SetPageService(pageProvider);
             SetServiceProvider(serviceProvider);
 
@@ -47,25 +56,27 @@ namespace skinhunter.Views.Windows
             };
         }
 
+        private void OnPreferencesChanged()
+        {
+            Dispatcher.Invoke(ApplyBackdropPreference);
+        }
+
+        private void ApplyBackdropPreference()
+        {
+            this.WindowBackdropType = _userPreferencesService.GetBackdropType();
+        }
+
         private void OnNavigated(object sender, NavigatedEventArgs e)
         {
-            if (e.Page is FrameworkElement { DataContext: ViewModelBase viewModel } page)
+            if (e.Page is FrameworkElement { DataContext: ViewModelBase viewModel })
             {
                 ViewModel.CurrentPageViewModel = viewModel;
-
-                var navigationView = sender as INavigationView;
-                var selectedItem = navigationView?.MenuItems.OfType<INavigationViewItem>().FirstOrDefault(i => i.TargetPageType == page.GetType())
-                                ?? navigationView?.FooterMenuItems.OfType<INavigationViewItem>().FirstOrDefault(i => i.TargetPageType == page.GetType());
-
-                if (selectedItem != null)
-                {
-                    ViewModel.CurrentPageTitle = selectedItem.Content as string;
-                }
-                else if (page.GetType() != typeof(ChampionDetailPage))
-                {
-                    ViewModel.CurrentPageTitle = "Page";
-                }
             }
+
+            // The title is now set by each page's ViewModel in its OnNavigatedToAsync method.
+            // This method is now only responsible for updating the current ViewModel and applying animations.
+
+            TransitionAnimationProvider.ApplyTransition(e.Page, Transition.FadeInWithSlide, 300);
         }
 
         public INavigationView GetNavigation() => RootNavigation;
@@ -77,6 +88,7 @@ namespace skinhunter.Views.Windows
 
         protected override void OnClosed(EventArgs e)
         {
+            _userPreferencesService.PreferencesChanged -= OnPreferencesChanged;
             base.OnClosed(e);
             Application.Current.Shutdown();
         }

@@ -9,12 +9,16 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows.Threading;
 using Wpf.Ui.Abstractions.Controls;
+using Microsoft.Extensions.DependencyInjection;
+using skinhunter.Views.Components;
 
 namespace skinhunter.ViewModels.Pages
 {
     public partial class ChampionGridPageViewModel : ViewModelBase, INavigationAware
     {
         private readonly ICustomNavigationService _customNavigationService;
+        private readonly MainWindowViewModel _mainWindowViewModel;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ObservableCollection<ChampionSummary> _allChampions = new();
         private bool _dataLoadedAtLeastOnce = false;
 
@@ -29,9 +33,11 @@ namespace skinhunter.ViewModels.Pages
 
         public ICollectionView ChampionsView { get; }
 
-        public ChampionGridPageViewModel(ICustomNavigationService customNavigationService)
+        public ChampionGridPageViewModel(ICustomNavigationService customNavigationService, MainWindowViewModel mainWindowViewModel, IServiceProvider serviceProvider)
         {
             _customNavigationService = customNavigationService;
+            _mainWindowViewModel = mainWindowViewModel;
+            _serviceProvider = serviceProvider;
             ChampionsView = CollectionViewSource.GetDefaultView(_allChampions);
             ChampionsView.Filter = FilterChampions;
             AllRoles.Add("All");
@@ -39,6 +45,12 @@ namespace skinhunter.ViewModels.Pages
 
         public async Task OnNavigatedToAsync()
         {
+            _mainWindowViewModel.CurrentPageTitle = "Home";
+
+            var header = _serviceProvider.GetRequiredService<ChampionGridPageHeader>();
+            header.DataContext = this;
+            _mainWindowViewModel.CurrentPageHeaderContent = header;
+
             IsLoading = true;
             await Task.Delay(200);
 

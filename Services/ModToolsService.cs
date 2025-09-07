@@ -8,14 +8,17 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Supabase;
 using System.Threading.Tasks;
 using System.Windows;
+using Wpf.Ui.Controls;
 
 namespace skinhunter.Services
 {
     public class ModToolsService : IDisposable
     {
         private readonly string _modToolsExePath;
+        private readonly Client _supabaseClient;
         private readonly IServiceProvider _serviceProvider;
         private readonly string _installedSkinsDir;
         private readonly string _profilesDir;
@@ -26,19 +29,22 @@ namespace skinhunter.Services
         private readonly CancellationTokenSource _queueCts = new();
         private readonly ConcurrentQueue<Func<CancellationToken, Task>> _commandQueue = new();
 
-        public event Action<string>? CommandOutputReceived;
+        public event Action<string, bool>? CommandOutputReceived;
         public event Action<bool>? OverlayStatusChanged;
         public bool IsOverlayRunning { get; private set; }
 
-        public ModToolsService(IServiceProvider serviceProvider)
+        public ModToolsService(IServiceProvider serviceProvider, Client supabaseClient)
         {
             _serviceProvider = serviceProvider;
+            _supabaseClient = supabaseClient;
             string appExePath = Path.GetDirectoryName(AppContext.BaseDirectory) ?? throw new DirectoryNotFoundException("Could not determine application base directory.");
             _modToolsExePath = Path.Combine(appExePath, "Tools", "cslol-tools", "mod-tools.exe");
             string userDataDir = Path.Combine(appExePath, "UserData", "LoLModInstaller");
             _installedSkinsDir = Path.Combine(userDataDir, "installed");
             _profilesDir = Path.Combine(userDataDir, "profiles", "Default");
-            _gamePath = @"C:\Riot Games\League of Legends\Game";
+
+            var userPrefs = _serviceProvider.GetRequiredService<UserPreferencesService>();
+            _gamePath = userPrefs.GetGamePath() ?? @"C:\Riot Games\League of Legends\Game";
 
             EnsureDirectoriesExist();
             _ = ProcessQueueAsync(_queueCts.Token);
@@ -57,10 +63,28 @@ namespace skinhunter.Services
             }
         }
 
-        private Task EnqueueCommand(Func<CancellationToken, Task> command)
+        private Task EnqueueCommand(Func<CancellationToken, Task> commandAction)
         {
-            _commandQueue.Enqueue(command);
-            return Task.CompletedTask;
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            _commandQueue.Enqueue(async (token) =>
+            {
+                try
+                {
+                    await commandAction(token);
+                    tcs.SetResult();
+                }
+                catch (OperationCanceledException)
+                {
+                    tcs.SetCanceled();
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+            });
+
+            return tcs.Task;
         }
 
         private async Task ProcessQueueAsync(CancellationToken cancellationToken)
@@ -75,7 +99,7 @@ namespace skinhunter.Services
                     }
                     catch (Exception ex)
                     {
-                        FileLoggerService.Log($"[ModToolsService] Error executing command: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                        FileLoggerService.Log($"[ModToolsService] Error executing queued command: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
                     }
                 }
                 else
@@ -115,8 +139,8 @@ namespace skinhunter.Services
                 var outputBuilder = new StringBuilder();
                 var errorBuilder = new StringBuilder();
 
-                process.OutputDataReceived += (s, e) => { if (e.Data != null) { outputBuilder.AppendLine(e.Data); CommandOutputReceived?.Invoke(e.Data); } };
-                process.ErrorDataReceived += (s, e) => { if (e.Data != null) { errorBuilder.AppendLine(e.Data); CommandOutputReceived?.Invoke(e.Data); } };
+                process.OutputDataReceived += (s, e) => { if (e.Data != null) { outputBuilder.AppendLine(e.Data); CommandOutputReceived?.Invoke(e.Data, false); } };
+                process.ErrorDataReceived += (s, e) => { if (e.Data != null) { errorBuilder.AppendLine(e.Data); CommandOutputReceived?.Invoke("An error occurred with mod-tools.", true); } };
 
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
@@ -134,79 +158,191 @@ namespace skinhunter.Services
         }
 
         public Task StopRunOverlayAsync() => EnqueueCommand(StopRunOverlayInternalAsync);
-        public Task QueueRebuildWithInstalledSkins() => EnqueueCommand(RebuildAndRunOverlayInternalAsync);
-        public Task QueueInstallAndRebuild(InstalledSkinInfo skinInfo, byte[] fantomeBytes) => EnqueueCommand(c => InstallSkinInternalAsync(skinInfo, fantomeBytes, c));
-        public Task QueueUninstallSkins(IEnumerable<InstalledSkinInfo> skinsToUninstall) => EnqueueCommand(c => UninstallSkinsInternalAsync(skinsToUninstall, c));
+        public Task QueueSyncAndRebuild() => EnqueueCommand(SynchronizeAndRebuildInternalAsync);
+        public Task QueueInstallAndRebuild(InstalledSkinInfo skinInfo, byte[] fantomeBytes, ISnackbarService snackbarService) => EnqueueCommand(c => InstallSkinInternalAsync(skinInfo, fantomeBytes, snackbarService, c));
+        public Task QueueUninstallSkins(IEnumerable<InstalledSkinInfo> skinsToUninstall, ISnackbarService snackbarService) => EnqueueCommand(c => UninstallSkinsInternalAsync(skinsToUninstall, snackbarService, c));
+
+        private async Task SynchronizeAndRebuildInternalAsync(CancellationToken cancellationToken)
+        {
+            await StopRunOverlayInternalAsync(cancellationToken);
+
+            var userPrefs = _serviceProvider.GetRequiredService<UserPreferencesService>();
+            var installedSkins = userPrefs.GetInstalledSkins();
+            var successfullyInstalledSkins = new List<InstalledSkinInfo>();
+
+            if (!installedSkins.Any())
+            {
+                FileLoggerService.Log("[ModToolsService] No skins to sync. Ensuring overlay is stopped.");
+                return;
+            }
+
+            FileLoggerService.Log($"[ModToolsService] Starting skin synchronization for {installedSkins.Count} skins.");
+            CommandOutputReceived?.Invoke("Starting skin synchronization...", false);
+
+            foreach (var skinInfo in installedSkins)
+            {
+                if (cancellationToken.IsCancellationRequested) return;
+
+                CommandOutputReceived?.Invoke($"Verifying: {skinInfo.SkinName}", false);
+                bool isInstalledSuccessfully = false;
+                var skinDestinationDir = Path.Combine(_installedSkinsDir, skinInfo.FolderName);
+
+                if (Directory.Exists(skinDestinationDir))
+                {
+                    isInstalledSuccessfully = true;
+                    FileLoggerService.Log($"[ModToolsService] Skin '{skinInfo.SkinName}' already exists locally.");
+                }
+                else
+                {
+                    FileLoggerService.Log($"[ModToolsService] Skin '{skinInfo.SkinName}' is missing locally. Attempting installation.");
+                    CommandOutputReceived?.Invoke($"Downloading: {skinInfo.SkinName}...", false);
+
+                    int maxRetries = 2;
+                    for (int retry = 0; retry < maxRetries; retry++)
+                    {
+                        try
+                        {
+                            await DownloadAndInstallMissingSkinAsync(skinInfo, cancellationToken);
+                            isInstalledSuccessfully = true;
+                            FileLoggerService.Log($"[ModToolsService] Successfully synced skin '{skinInfo.SkinName}' on attempt {retry + 1}.");
+                            CommandOutputReceived?.Invoke($"Synced: {skinInfo.SkinName}", false);
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            FileLoggerService.Log($"[ModToolsService] Failed to sync skin '{skinInfo.SkinName}' on attempt {retry + 1}. Error: {ex.Message}");
+                            CommandOutputReceived?.Invoke($"Error syncing {skinInfo.SkinName} (attempt {retry + 1})", true);
+
+                            await TryDeleteDirectoryAsync(skinDestinationDir);
+                            await TryDeleteFileAsync(Path.Combine(_installedSkinsDir, skinInfo.FileName));
+
+                            if (retry < maxRetries - 1)
+                            {
+                                await Task.Delay(1000, cancellationToken);
+                            }
+                        }
+                    }
+                }
+
+                if (isInstalledSuccessfully)
+                {
+                    successfullyInstalledSkins.Add(skinInfo);
+                }
+                else
+                {
+                    FileLoggerService.Log($"[ModToolsService] CRITICAL: Failed to install skin '{skinInfo.SkinName}' after all retries. It will be excluded from this build.");
+                    CommandOutputReceived?.Invoke($"Failed to install {skinInfo.SkinName}. Excluding.", true);
+                }
+            }
+
+            FileLoggerService.Log($"[ModToolsService] Skin synchronization finished. Successfully installed {successfullyInstalledSkins.Count}/{installedSkins.Count} skins.");
+
+            if (successfullyInstalledSkins.Any())
+            {
+                await RebuildAndRunOverlayForSkinsAsync(successfullyInstalledSkins, cancellationToken);
+            }
+            else
+            {
+                FileLoggerService.Log("[ModToolsService] No skins were successfully installed. Skipping overlay build.");
+            }
+        }
 
         private async Task StopRunOverlayInternalAsync(CancellationToken cancellationToken)
         {
+            Process? processToStop = null;
+
             await _processLock.WaitAsync(cancellationToken);
             try
             {
                 if (_runOverlayProcess != null && !_runOverlayProcess.HasExited)
                 {
-                    FileLoggerService.Log($"[ModToolsService] Stopping runoverlay process PID: {_runOverlayProcess.Id}");
-                    _runOverlayProcess.Kill(true);
-                    await _runOverlayProcess.WaitForExitAsync(cancellationToken);
+                    processToStop = _runOverlayProcess;
+                    _runOverlayProcess = null;
                 }
-            }
-            catch (Exception ex)
-            {
-                FileLoggerService.Log($"[ModToolsService] Error stopping overlay: {ex.Message}");
             }
             finally
             {
-                if (_runOverlayProcess != null)
-                {
-                    _runOverlayProcess.Exited -= OnRunOverlayProcessExited;
-                    _runOverlayProcess.Dispose();
-                    _runOverlayProcess = null;
-                }
-
-                if (IsOverlayRunning)
-                {
-                    IsOverlayRunning = false;
-                    OverlayStatusChanged?.Invoke(false);
-                }
                 _processLock.Release();
             }
-        }
 
-        private async Task RebuildAndRunOverlayInternalAsync(CancellationToken cancellationToken)
-        {
-            await StopRunOverlayInternalAsync(cancellationToken);
-            await MkOverlayAsync(cancellationToken);
-
-            var userPrefs = _serviceProvider.GetRequiredService<UserPreferencesService>();
-            if (userPrefs.GetInstalledSkins().Any())
+            if (processToStop != null)
             {
-                await RunOverlayAsync(cancellationToken);
+                try
+                {
+                    FileLoggerService.Log($"[ModToolsService] Stopping runoverlay process PID: {processToStop.Id}");
+                    processToStop.Kill(true);
+                    await processToStop.WaitForExitAsync(cancellationToken);
+                    FileLoggerService.Log($"[ModToolsService] Process PID {processToStop.Id} has been stopped.");
+                }
+                catch (Exception ex)
+                {
+                    FileLoggerService.Log($"[ModToolsService] Exception while stopping process PID {processToStop.Id}: {ex.Message}");
+                }
+                finally
+                {
+                    processToStop.Dispose();
+                }
             }
+            else
+            {
+                FileLoggerService.Log("[ModToolsService] StopRunOverlayInternalAsync called but no active process was found.");
+            }
+
+            if (IsOverlayRunning)
+            {
+                IsOverlayRunning = false;
+                OverlayStatusChanged?.Invoke(false);
+            }
+
+            await Task.Delay(250, cancellationToken);
         }
 
-        private async Task InstallSkinInternalAsync(InstalledSkinInfo skinInfo, byte[] fantomeBytes, CancellationToken cancellationToken)
+        private async Task RebuildAndRunOverlayForSkinsAsync(List<InstalledSkinInfo> skins, CancellationToken cancellationToken)
+        {
+            FileLoggerService.Log($"Rebuilding overlay for {skins.Count} skins.");
+            await MkOverlayAsync(cancellationToken, skins);
+            await RunOverlayAsync(cancellationToken);
+        }
+
+        private async Task InstallSkinInternalAsync(InstalledSkinInfo skinInfo, byte[] fantomeBytes, ISnackbarService snackbarService, CancellationToken cancellationToken)
         {
             await StopRunOverlayInternalAsync(cancellationToken);
+
+            snackbarService.Show("Installing...", $"Installing skin '{skinInfo.SkinName}'...", ControlAppearance.Secondary, new SymbolIcon(SymbolRegular.ArrowDownload24), TimeSpan.FromSeconds(15));
 
             string fantomeFilePath = Path.Combine(_installedSkinsDir, skinInfo.FileName);
             string skinDestinationDir = Path.Combine(_installedSkinsDir, skinInfo.FolderName);
 
+            await TryDeleteDirectoryAsync(skinDestinationDir);
+            await TryDeleteFileAsync(fantomeFilePath);
+
             Directory.CreateDirectory(skinDestinationDir);
             await File.WriteAllBytesAsync(fantomeFilePath, fantomeBytes, cancellationToken);
 
-            await ImportFantomeAsync(fantomeFilePath, skinDestinationDir, cancellationToken);
+            var (success, output) = await ImportFantomeAsync(fantomeFilePath, skinDestinationDir, cancellationToken);
 
             await TryDeleteFileAsync(fantomeFilePath);
+
+            if (!success)
+            {
+                FileLoggerService.Log($"[ModToolsService] mod-tools import failed for {skinInfo.SkinName}. Output: {output}. Cleaning up failed installation.");
+                await TryDeleteDirectoryAsync(skinDestinationDir);
+                snackbarService.Show("Installation Failed", $"Could not install '{skinInfo.SkinName}'.", ControlAppearance.Danger, new SymbolIcon(SymbolRegular.ErrorCircle24), TimeSpan.FromSeconds(5));
+                throw new Exception($"Failed to import skin: {skinInfo.SkinName}.");
+            }
+
+            snackbarService.Show("Success!", $"Skin '{skinInfo.SkinName}' installed.", ControlAppearance.Success, new SymbolIcon(SymbolRegular.CheckmarkCircle24), TimeSpan.FromSeconds(5));
 
             var userPrefs = _serviceProvider.GetRequiredService<UserPreferencesService>();
             await userPrefs.AddInstalledSkinAsync(skinInfo);
 
-            await RebuildAndRunOverlayInternalAsync(cancellationToken);
+            await SynchronizeAndRebuildInternalAsync(cancellationToken);
         }
 
-        private async Task UninstallSkinsInternalAsync(IEnumerable<InstalledSkinInfo> skinsToUninstall, CancellationToken cancellationToken)
+        private async Task UninstallSkinsInternalAsync(IEnumerable<InstalledSkinInfo> skinsToUninstall, ISnackbarService snackbarService, CancellationToken cancellationToken)
         {
             await StopRunOverlayInternalAsync(cancellationToken);
+            snackbarService.Show("Uninstalling...", $"Removing {skinsToUninstall.Count()} skin(s).", ControlAppearance.Secondary, new SymbolIcon(SymbolRegular.Delete24), TimeSpan.FromSeconds(15));
             var userPrefs = _serviceProvider.GetRequiredService<UserPreferencesService>();
             foreach (var skin in skinsToUninstall)
             {
@@ -214,7 +350,49 @@ namespace skinhunter.Services
                 await TryDeleteDirectoryAsync(skinDir);
                 await userPrefs.RemoveInstalledSkinAsync(skin);
             }
-            await RebuildAndRunOverlayInternalAsync(cancellationToken);
+            snackbarService.Show("Success!", "Selected skins have been uninstalled.", ControlAppearance.Success, new SymbolIcon(SymbolRegular.CheckmarkCircle24), TimeSpan.FromSeconds(5));
+            await SynchronizeAndRebuildInternalAsync(cancellationToken);
+        }
+
+        private async Task DownloadAndInstallMissingSkinAsync(InstalledSkinInfo skinInfo, CancellationToken cancellationToken)
+        {
+            string fantomeFilePath = Path.Combine(_installedSkinsDir, skinInfo.FileName);
+            string skinDestinationDir = Path.Combine(_installedSkinsDir, skinInfo.FolderName);
+
+            string supabasePath;
+            if (!string.IsNullOrEmpty(skinInfo.ChromaName) && skinInfo.SkinOrChromaId > 10000)
+            {
+                supabasePath = $"campeones/{skinInfo.ChampionId}/{skinInfo.SkinOrChromaId}.fantome";
+            }
+            else
+            {
+                int skinNum = skinInfo.SkinOrChromaId % 1000;
+                supabasePath = $"campeones/{skinInfo.ChampionId}/{skinNum}.fantome";
+            }
+
+            FileLoggerService.Log($"[ModToolsService] Downloading from Supabase path: {supabasePath}");
+            cancellationToken.ThrowIfCancellationRequested();
+            byte[]? fileBytes = await _supabaseClient.Storage.From("campeones").Download(supabasePath, null);
+
+            if (fileBytes == null || fileBytes.Length == 0)
+            {
+                throw new Exception($"Download failed or file is empty from Supabase. Path: {supabasePath}");
+            }
+            FileLoggerService.Log($"[ModToolsService] Downloaded {fileBytes.Length} bytes.");
+
+            Directory.CreateDirectory(Path.GetDirectoryName(fantomeFilePath));
+            await File.WriteAllBytesAsync(fantomeFilePath, fileBytes, cancellationToken);
+
+            var (success, output) = await ImportFantomeAsync(fantomeFilePath, skinDestinationDir, cancellationToken);
+
+            await TryDeleteFileAsync(fantomeFilePath);
+
+            if (!success)
+            {
+                FileLoggerService.Log($"[ModToolsService] mod-tools import failed for {skinInfo.SkinName}. Output: {output}. Cleaning up failed installation.");
+                await TryDeleteDirectoryAsync(skinDestinationDir);
+                throw new Exception($"Failed to import skin: {skinInfo.SkinName}.");
+            }
         }
 
         private async Task RunOverlayAsync(CancellationToken cancellationToken)
@@ -222,6 +400,12 @@ namespace skinhunter.Services
             await _processLock.WaitAsync(cancellationToken);
             try
             {
+                if (_runOverlayProcess != null)
+                {
+                    FileLoggerService.Log("[ModToolsService] RunOverlayAsync called but a process already exists. Aborting start.");
+                    return;
+                }
+
                 var startInfo = new ProcessStartInfo
                 {
                     FileName = _modToolsExePath,
@@ -236,8 +420,8 @@ namespace skinhunter.Services
                 FileLoggerService.Log($"[ModToolsService] Starting long-lived process: \"{startInfo.FileName}\" {startInfo.Arguments}");
                 _runOverlayProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
 
-                _runOverlayProcess.OutputDataReceived += (s, e) => { if (e.Data != null) CommandOutputReceived?.Invoke(e.Data); };
-                _runOverlayProcess.ErrorDataReceived += (s, e) => { if (e.Data != null) CommandOutputReceived?.Invoke(e.Data); };
+                _runOverlayProcess.OutputDataReceived += (s, e) => { if (e.Data != null) CommandOutputReceived?.Invoke(e.Data, false); };
+                _runOverlayProcess.ErrorDataReceived += (s, e) => { if (e.Data != null) CommandOutputReceived?.Invoke("An error occurred with mod-tools.", true); };
                 _runOverlayProcess.Exited += OnRunOverlayProcessExited;
 
                 _runOverlayProcess.Start();
@@ -250,6 +434,8 @@ namespace skinhunter.Services
             catch (Exception ex)
             {
                 FileLoggerService.Log($"[ModToolsService] Failed to start runoverlay process: {ex.Message}");
+                _runOverlayProcess?.Dispose();
+                _runOverlayProcess = null;
             }
             finally
             {
@@ -259,32 +445,47 @@ namespace skinhunter.Services
 
         private void OnRunOverlayProcessExited(object? sender, EventArgs e)
         {
-            FileLoggerService.Log("[ModToolsService] runoverlay process has exited.");
-            if (_runOverlayProcess != null)
+            var exitedProcess = sender as Process;
+            FileLoggerService.Log($"[ModToolsService] Process PID {exitedProcess?.Id.ToString() ?? "Unknown"} has exited.");
+
+            if (exitedProcess != null)
             {
-                _runOverlayProcess.Exited -= OnRunOverlayProcessExited;
-                _runOverlayProcess.Dispose();
+                exitedProcess.Exited -= OnRunOverlayProcessExited;
+                exitedProcess.Dispose();
+            }
+
+            if (ReferenceEquals(_runOverlayProcess, exitedProcess))
+            {
                 _runOverlayProcess = null;
             }
-            IsOverlayRunning = false;
-            OverlayStatusChanged?.Invoke(false);
+
+            if (IsOverlayRunning)
+            {
+                IsOverlayRunning = false;
+                Application.Current?.Dispatcher.Invoke(() => OverlayStatusChanged?.Invoke(false));
+            }
         }
 
-        private async Task ImportFantomeAsync(string fantomePath, string destDir, CancellationToken cancellationToken)
+        private async Task<(bool, string)> ImportFantomeAsync(string fantomePath, string destDir, CancellationToken cancellationToken)
         {
             var args = $"import \"{fantomePath}\" \"{destDir}\"";
-            await ExecuteShortLivedCommandAsync(args, cancellationToken);
+            return await ExecuteShortLivedCommandAsync(args, cancellationToken);
         }
 
-        private async Task MkOverlayAsync(CancellationToken cancellationToken)
+        private async Task MkOverlayAsync(CancellationToken cancellationToken, List<InstalledSkinInfo> installed)
         {
-            var userPrefs = _serviceProvider.GetRequiredService<UserPreferencesService>();
-            var installed = userPrefs.GetInstalledSkins();
-            if (installed.Any())
+            CommandOutputReceived?.Invoke("Building game files...", false);
+            if (installed != null && installed.Any())
             {
                 var modsArg = $"--mods:{string.Join("/", installed.Select(s => s.FolderName))}";
                 var args = $"mkoverlay \"{_installedSkinsDir}\" \"{_profilesDir}\" --game:\"{_gamePath}\" {modsArg}";
-                await ExecuteShortLivedCommandAsync(args, cancellationToken);
+
+                var (success, output) = await ExecuteShortLivedCommandAsync(args, cancellationToken);
+                if (!success)
+                {
+                    FileLoggerService.Log($"[ModToolsService] CRITICAL: mkoverlay failed. Output: {output}. The overlay may not work correctly.");
+                    CommandOutputReceived?.Invoke("Error: Failed to build game files.", true);
+                }
             }
         }
 
@@ -294,6 +495,7 @@ namespace skinhunter.Services
             {
                 try { File.Delete(path); }
                 catch (IOException) { await Task.Delay(200); try { File.Delete(path); } catch (Exception ex) { FileLoggerService.Log($"Failed to delete file {path}: {ex.Message}"); } }
+                catch (Exception ex) { FileLoggerService.Log($"Failed to delete file {path}: {ex.Message}"); }
             }
         }
 
@@ -303,6 +505,7 @@ namespace skinhunter.Services
             {
                 try { Directory.Delete(path, true); }
                 catch (IOException) { await Task.Delay(200); try { Directory.Delete(path, true); } catch (Exception ex) { FileLoggerService.Log($"Failed to delete directory {path}: {ex.Message}"); } }
+                catch (Exception ex) { FileLoggerService.Log($"Failed to delete directory {path}: {ex.Message}"); }
             }
         }
 
@@ -310,7 +513,7 @@ namespace skinhunter.Services
         {
             _queueCts.Cancel();
             _queueCts.Dispose();
-            StopRunOverlayAsync().Wait(1000);
+            StopRunOverlayAsync().Wait(TimeSpan.FromSeconds(5));
             _processLock.Dispose();
             GC.SuppressFinalize(this);
         }

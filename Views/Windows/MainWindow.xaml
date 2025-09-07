@@ -9,22 +9,32 @@
     xmlns:vmWindows="clr-namespace:skinhunter.ViewModels.Windows"
     xmlns:vmPages="clr-namespace:skinhunter.ViewModels.Pages"
     xmlns:vmDialogs="clr-namespace:skinhunter.ViewModels.Dialogs"
-    xmlns:vm="clr-namespace:skinhunter.ViewModels"
     xmlns:viewsDialogs="clr-namespace:skinhunter.Views.Dialogs"
     xmlns:viewsComponents="clr-namespace:skinhunter.Views.Components"
     xmlns:converters="clr-namespace:skinhunter.Converters"
     Title="{Binding ApplicationTitle, Mode=OneWay}"
-    Icon="pack://application:,,,/Assets/icon.ico"
+    Icon="pack://application:,,,/Assets/predator.ico"
     Width="1280" Height="720" MinHeight="600" MinWidth="1000"
     d:DataContext="{d:DesignInstance Type=vmWindows:MainWindowViewModel, IsDesignTimeCreatable=False}"
     ExtendsContentIntoTitleBar="True"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     WindowBackdropType="Mica" WindowCornerPreference="Round" WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
+
     <Grid>
+        <StackPanel
+            Orientation="Horizontal"
+            VerticalAlignment="Top"
+            HorizontalAlignment="Left"
+            Margin="12,0,0,0"
+            Height="42">
+            <Image Source="pack://application:,,,/Assets/predator.ico" Height="24" VerticalAlignment="Center" Margin="0,0,10,0" RenderOptions.BitmapScalingMode="Fant"/>
+            <TextBlock Text="{Binding ApplicationTitle}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+        </StackPanel>
+
         <DockPanel Margin="0,42,0,0">
-            <Border DockPanel.Dock="Top" Background="{DynamicResource ApplicationBackgroundBrush}" BorderBrush="{DynamicResource ControlElevationBorderBrush}" BorderThickness="0,0,0,1">
-                <Grid Margin="28,0,28,0" VerticalAlignment="Center" Height="50" DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type local:MainWindow}}}">
+            <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource ControlElevationBorderBrush}" BorderThickness="0,0,0,1">
+                <Grid Margin="28,0,28,0" VerticalAlignment="Center" Height="50">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
@@ -32,20 +42,14 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Column="0" Text="{Binding CurrentPageTitle, FallbackValue=Page}" FontSize="18" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,24,0"/>
+                    <ui:Button Grid.Column="0" Command="{Binding GoBackCommand}" Appearance="Transparent" VerticalAlignment="Center" Margin="-13,0,10,0"
+                               Visibility="{Binding IsBackButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ui:SymbolIcon Symbol="ArrowLeft24" />
+                    </ui:Button>
 
-                    <ContentControl Grid.Column="1" Content="{Binding CurrentPageViewModel}" VerticalAlignment="Center">
-                        <ContentControl.Resources>
-                            <DataTemplate DataType="{x:Type vmPages:ChampionGridPageViewModel}">
-                                <viewsComponents:ChampionGridPageHeader/>
-                            </DataTemplate>
-                            <DataTemplate DataType="{x:Type vmPages:InstalledSkinsViewModel}">
-                                <viewsComponents:InstalledSkinsPageHeader/>
-                            </DataTemplate>
-                            <DataTemplate DataType="{x:Type vmPages:SettingsViewModel}"/>
-                            <DataTemplate DataType="{x:Type vmPages:ProfileViewModel}"/>
-                        </ContentControl.Resources>
-                    </ContentControl>
+                    <TextBlock Grid.Column="1" Text="{Binding CurrentPageTitle, FallbackValue=Page}" FontSize="18" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,24,0"/>
+
+                    <ContentControl Grid.Column="2" Content="{Binding CurrentPageHeaderContent}" VerticalAlignment="Center"/>
 
                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" DataContext="{Binding OverlayViewModel}">
                         <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
@@ -55,14 +59,19 @@
                                 Padding="8,6"
                                 Margin="0,0,8,0"
                                 VerticalAlignment="Center"
+                                Opacity="{Binding StatusTextOpacity}"
                                 Visibility="{Binding StatusText, Converter={StaticResource NullOrEmptyToVisibilityConverter}}">
-                            <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Text="{Binding StatusText, FallbackValue=''}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Warning24" Foreground="OrangeRed" Margin="0,0,6,0"
+                                             Visibility="{Binding IsStatusError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Text="{Binding StatusText, FallbackValue=''}"/>
+                            </StackPanel>
                         </Border>
                         <ui:Button
                             Content="{Binding Content}"
                             Command="{Binding ToggleOverlayCommand}"
                             IsEnabled="{Binding CanExecuteToggleOverlay}"
-                            Icon="{Binding Icon}"
+                            Icon="{Binding Icon, Converter={StaticResource SymbolToIconConverter}}"
                             Appearance="Secondary"
                             VerticalContentAlignment="Center"/>
                     </StackPanel>
@@ -80,11 +89,7 @@
             </ui:NavigationView>
         </DockPanel>
 
-        <ui:TitleBar VerticalAlignment="Top" Title="{Binding ApplicationTitle}" CloseWindowByDoubleClickOnIcon="True">
-            <ui:TitleBar.Icon>
-                <ui:ImageIcon Source="pack://application:,,,/Assets/icon.ico"/>
-            </ui:TitleBar.Icon>
-        </ui:TitleBar>
+        <ui:TitleBar VerticalAlignment="Top" CloseWindowByDoubleClickOnIcon="True" />
 
         <Grid Background="#A0000000" Visibility="{Binding DialogViewModel, Converter={StaticResource NullToVisibilityConverter}, FallbackValue=Collapsed}" Panel.ZIndex="10">
             <ContentControl Content="{Binding DialogViewModel}" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -108,16 +113,12 @@
 
         <Grid Background="{DynamicResource ApplicationBackgroundBrush}" Opacity="0.95" Visibility="{Binding IsGloballyLoading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}" Panel.ZIndex="11">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <ui:ProgressRing IsIndeterminate="True" Width="60" Height="60" />
+                <ui:ProgressRing Width="60" Height="60" IsIndeterminate="True"/>
                 <TextBlock Text="{Binding GlobalLoadingMessage}" FontSize="16" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,20,0,0" TextAlignment="Center"/>
             </StackPanel>
         </Grid>
 
-        <Grid Background="{DynamicResource ApplicationBackgroundBrush}" Opacity="0.95" Visibility="{Binding IsGlobalSuccessOverlayVisible, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}" Panel.ZIndex="12">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <ui:SymbolIcon Symbol="CheckmarkCircle24" FontSize="60" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                <TextBlock Text="{Binding GlobalSuccessMessage}" FontSize="16" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,20,0,0" TextAlignment="Center"/>
-            </StackPanel>
-        </Grid>
+        <ui:SnackbarPresenter x:Name="SnackbarPresenter" Panel.ZIndex="99"/>
+
     </Grid>
 </ui:FluentWindow>

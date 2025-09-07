@@ -3,49 +3,119 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:helpers="clr-namespace:skinhunter.Helpers"
-    xmlns:local="clr-namespace:skinhunter.Views.Pages"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-    Title="SettingsPage"
-    d:DataContext="{d:DesignInstance local:SettingsPage,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
+    xmlns:vm="clr-namespace:skinhunter.ViewModels.Pages"
+    mc:Ignorable="d"
+    d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel, IsDesignTimeCreatable=False}"
+    DataContext="{Binding ViewModel, RelativeSource={RelativeSource Self}}"
     ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
     ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-    mc:Ignorable="d">
-    <Page.Resources>
-        <helpers:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
-    </Page.Resources>
+    ScrollViewer.CanContentScroll="True">
 
-    <StackPanel>
-        <TextBlock
-            FontSize="20"
-            FontWeight="Medium"
-            Text="Personalization" />
-        <TextBlock Margin="0,12,0,0" Text="Theme" />
-        <RadioButton
-            Margin="0,12,0,0"
-            Command="{Binding ViewModel.ChangeThemeCommand, Mode=OneWay}"
-            CommandParameter="theme_light"
-            Content="Light"
-            GroupName="themeSelect"
-            IsChecked="{Binding ViewModel.CurrentTheme, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Light, Mode=OneWay}" />
-        <RadioButton
-            Margin="0,8,0,0"
-            Command="{Binding ViewModel.ChangeThemeCommand, Mode=OneWay}"
-            CommandParameter="theme_dark"
-            Content="Dark"
-            GroupName="themeSelect"
-            IsChecked="{Binding ViewModel.CurrentTheme, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Dark, Mode=OneWay}" />
+    <StackPanel Margin="28,20,28,20">
+        <!-- El título "Settings" ahora es manejado por la cabecera dinámica de MainWindow -->
 
-        <TextBlock
-            Margin="0,24,0,0"
-            FontSize="20"
-            FontWeight="Medium"
-            Text="About skinhunter" />
-        <TextBlock Margin="0,12,0,0" Text="{Binding ViewModel.AppVersion, Mode=OneWay}" />
+        <!-- General Section -->
+        <TextBlock Text="General" FontWeight="SemiBold" FontSize="18" Margin="0,0,0,12" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon ArrowSync24}">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <TextBlock Text="Sync Skins on Startup" FontWeight="Medium"/>
+                    <TextBlock Text="Automatically sync and build installed skins when the app starts." FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:ToggleSwitch VerticalAlignment="Center" IsChecked="{Binding SyncOnStart, Mode=TwoWay}"/>
+        </ui:CardControl>
+
+        <!-- Game Section -->
+        <TextBlock Text="Game" FontWeight="SemiBold" FontSize="18" Margin="0,24,0,12" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Games24}">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <TextBlock Text="League of Legends Path" FontWeight="Medium"/>
+                    <TextBlock Text="Set the path to your League of Legends 'Game' directory." FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </ui:CardControl.Header>
+            <Grid VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <ui:TextBox Grid.Column="0" Text="{Binding GamePath, Mode=OneWay}" IsReadOnly="True" VerticalContentAlignment="Center" MinHeight="36"/>
+                <ui:Button Grid.Column="1" Content="Browse" Margin="8,0,0,0" Command="{Binding SelectGamePathCommand}"/>
+            </Grid>
+        </ui:CardControl>
+        <ui:CardAction Margin="0,0,0,8" Command="{Binding OpenModsFolderCommand}" IsChevronVisible="True" Icon="{ui:SymbolIcon Folder24}">
+            <StackPanel>
+                <TextBlock Text="Open Mods Folder" FontWeight="Medium"/>
+                <TextBlock Text="Manage custom skin files manually." FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+            </StackPanel>
+        </ui:CardAction>
+
+        <!-- Appearance Section -->
+        <TextBlock Text="Appearance" FontWeight="SemiBold" FontSize="18" Margin="0,24,0,12" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Color24}">
+            <ui:CardControl.Header>
+                <TextBlock Text="Application Theme" FontWeight="Medium"/>
+            </ui:CardControl.Header>
+            <ui:ToggleSwitch VerticalAlignment="Center" OffContent="Light" OnContent="Dark" IsChecked="{Binding IsDarkTheme, Mode=TwoWay}"/>
+        </ui:CardControl>
+        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Window24}">
+            <ui:CardControl.Header>
+                <TextBlock Text="Window Effect" FontWeight="Medium"/>
+            </ui:CardControl.Header>
+            <ComboBox VerticalAlignment="Center" ItemsSource="{Binding AvailableBackdropTypes}" SelectedItem="{Binding SelectedBackdropType, Mode=TwoWay}" MinWidth="120"/>
+        </ui:CardControl>
+
+        <TextBlock Text="Accent Color" HorizontalAlignment="Center" FontWeight="Medium" Margin="0,8,0,4"/>
+        <ui:CardControl Margin="0,0,0,8">
+            <ItemsControl ItemsSource="{Binding PredefinedAccentColors}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <RadioButton GroupName="AccentColor"
+                                     Command="{Binding DataContext.ChangeAccentColorCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                     CommandParameter="{Binding}">
+                            <RadioButton.Template>
+                                <ControlTemplate TargetType="RadioButton">
+                                    <Border x:Name="border" Width="32" Height="32" CornerRadius="16" Margin="4"
+                                            BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1">
+                                        <Border.Background>
+                                            <SolidColorBrush Color="{Binding}"/>
+                                        </Border.Background>
+                                        <ui:SymbolIcon x:Name="check" Symbol="Checkmark24" Foreground="White" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Visibility="Collapsed"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
+                                            <Setter TargetName="border" Property="BorderThickness" Value="2"/>
+                                            <Setter TargetName="check" Property="Visibility" Value="Visible" />
+                                        </Trigger>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}"/>
+                                            <Setter TargetName="border" Property="BorderThickness" Value="2"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </RadioButton.Template>
+                        </RadioButton>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ui:CardControl>
+
+        <!-- About Section -->
+        <TextBlock Text="About" FontWeight="SemiBold" FontSize="18" Margin="0,24,0,12" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+        <ui:CardControl>
+            <TextBlock Text="{Binding AppVersion, Mode=OneWay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+        </ui:CardControl>
+
     </StackPanel>
 </Page>

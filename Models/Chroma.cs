@@ -27,13 +27,13 @@ namespace skinhunter.Models
             get
             {
                 if (Colors == null || Colors.Count == 0) return System.Windows.Media.Brushes.Gray;
-                if (Colors.Count == 1)
-                {
-                    try { return new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(Colors[0])); }
-                    catch { return System.Windows.Media.Brushes.Gray; }
-                }
+
                 try
                 {
+                    if (Colors.Count == 1)
+                    {
+                        return new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(Colors[0]));
+                    }
                     var gradient = new LinearGradientBrush
                     {
                         StartPoint = new System.Windows.Point(0, 0.5),
@@ -43,7 +43,10 @@ namespace skinhunter.Models
                     gradient.GradientStops.Add(new GradientStop((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(Colors[1]), 1.0));
                     return gradient;
                 }
-                catch { return System.Windows.Media.Brushes.Gray; }
+                catch (FormatException)
+                {
+                    return System.Windows.Media.Brushes.DarkGray;
+                }
             }
         }
 

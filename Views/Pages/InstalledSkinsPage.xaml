@@ -9,26 +9,59 @@
     xmlns:m="clr-namespace:skinhunter.Models"
     xmlns:converters="clr-namespace:skinhunter.Converters"
     mc:Ignorable="d"
-    d:DataContext="{d:DesignInstance Type=vm:InstalledSkinsViewModel, IsDesignTimeCreatable=True}"
+    d:DataContext="{d:DesignInstance Type=vm:InstalledSkinsViewModel, IsDesignTimeCreatable=False}"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     ScrollViewer.CanContentScroll="True">
     <Page.Resources>
         <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ui:ThemesDictionary Theme="Dark" />
+                <ui:ControlsDictionary />
+            </ResourceDictionary.MergedDictionaries>
             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
-            <Style x:Key="LoadingProgressRingStyle" TargetType="ui:ProgressRing">
-                <Setter Property="IsIndeterminate" Value="True"/>
-                <Setter Property="Width" Value="40"/>
-                <Setter Property="Height" Value="40"/>
-                <Setter Property="VerticalAlignment" Value="Center"/>
-                <Setter Property="HorizontalAlignment" Value="Center"/>
-            </Style>
         </ResourceDictionary>
     </Page.Resources>
 
     <Grid Margin="28,12,28,20">
-        <ui:ProgressRing IsIndeterminate="True" Style="{StaticResource LoadingProgressRingStyle}"
-                         Visibility="{Binding IsLoadingSkinsList, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"/>
+        <ItemsControl x:Name="SkeletonList">
+            <ItemsControl.Style>
+                <Style TargetType="ItemsControl">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsLoadingSkinsList}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ItemsControl.Style>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border BorderBrush="{DynamicResource ControlElevationBorderBrush}" BorderThickness="0,0,0,1" Margin="0,0,0,8" Padding="12" ClipToBounds="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Rectangle Grid.Column="0" Width="48" Height="48" RadiusX="4" RadiusY="4" Margin="0,0,15,0" Fill="{DynamicResource ControlFillColorSecondaryBrush}"/>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <Rectangle Height="12" Width="200" Fill="{DynamicResource ControlFillColorSecondaryBrush}" Margin="0,0,0,8" HorizontalAlignment="Left"/>
+                                <Rectangle Height="10" Width="120" Fill="{DynamicResource ControlFillColorSecondaryBrush}" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+            <ItemsControl.ItemsSource>
+                <x:Array Type="sys:Object" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                    <sys:Object/>
+                </x:Array>
+            </ItemsControl.ItemsSource>
+        </ItemsControl>
 
         <TextBlock Text="No skins currently installed." FontSize="16" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                    HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,50,0,0">
@@ -48,8 +81,23 @@
             </TextBlock.Style>
         </TextBlock>
 
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                      Visibility="{Binding IsLoadingSkinsList, Converter={StaticResource InverseBooleanToVisibilityConverter}, FallbackValue=Visible}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ScrollViewer.Style>
+                <Style TargetType="ScrollViewer">
+                    <Setter Property="Opacity" Value="0"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsLoadingSkinsList}" Value="False">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.4" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ScrollViewer.Style>
             <ItemsControl ItemsSource="{Binding InstalledSkins}" Visibility="{Binding HasInstalledSkins, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>

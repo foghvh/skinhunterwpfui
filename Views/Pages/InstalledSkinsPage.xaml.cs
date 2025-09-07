@@ -1,4 +1,5 @@
-﻿using skinhunter.ViewModels.Pages;
+﻿// Views/Pages/InstalledSkinsPage.xaml.cs
+using skinhunter.ViewModels.Pages;
 using Wpf.Ui.Abstractions.Controls;
 
 namespace skinhunter.Views.Pages

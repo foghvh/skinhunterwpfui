@@ -23,58 +23,6 @@
             <converters:ListToStringConverter x:Key="ListToStringConverter"/>
             <converters:SymbolToIconConverter x:Key="SymbolToIconConverter"/>
 
-            <Style x:Key="LoadingProgressRingStyle" TargetType="ui:ProgressRing">
-                <Setter Property="IsIndeterminate" Value="True"/>
-                <Setter Property="Width" Value="40"/>
-                <Setter Property="Height" Value="40"/>
-                <Setter Property="VerticalAlignment" Value="Center"/>
-                <Setter Property="HorizontalAlignment" Value="Center"/>
-            </Style>
-
-            <Style x:Key="NavigationRadioButtonStyle" TargetType="RadioButton">
-                <Setter Property="Padding" Value="12,10"/>
-                <Setter Property="Margin" Value="8,2"/>
-                <Setter Property="HorizontalAlignment" Value="Stretch"/>
-                <Setter Property="VerticalAlignment" Value="Center"/>
-                <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                <Setter Property="VerticalContentAlignment" Value="Center"/>
-                <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="BorderThickness" Value="2,0,0,0"/>
-                <Setter Property="BorderBrush" Value="Transparent"/>
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="FontWeight" Value="Medium"/>
-                <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="RadioButton">
-                            <Border x:Name="Bd"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="4"
-                                    SnapsToDevicePixels="True">
-                                <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}">
-                                    <ui:SymbolIcon Symbol="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Margin="0,0,12,0" FontSize="18"/>
-                                    <ContentPresenter VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
-                                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
-                                </Trigger>
-                                <Trigger Property="IsChecked" Value="True">
-                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SystemAccentColorLight2Brush}"/>
-                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
-                                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
-
         </ResourceDictionary>
     </Application.Resources>
 </Application>

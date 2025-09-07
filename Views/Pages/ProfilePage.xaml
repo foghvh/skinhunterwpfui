@@ -1,3 +1,4 @@
+<!-- Views/Pages/ProfilePage.xaml -->
 <Page
     x:Class="skinhunter.Views.Pages.ProfilePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -12,7 +13,7 @@
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     ScrollViewer.CanContentScroll="True">
     <Grid Margin="28,12,28,20">
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="300">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="350">
             <TextBlock Text="User Profile" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20" HorizontalAlignment="Center"/>
 
             <Border Width="100" Height="100" CornerRadius="50" Background="{DynamicResource AccentFillColorDefaultBrush}" Margin="0,0,0,20" HorizontalAlignment="Center">
@@ -23,21 +24,33 @@
 
             <ui:Card Padding="20">
                 <StackPanel>
-                    <Grid Margin="0,0,0,10">
+                    <Grid Margin="0,0,0,15">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Username:" FontSize="16" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <TextBlock Grid.Column="1" Text="{Binding UserName}" FontSize="16" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="0" Text="Username:" FontSize="16" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                        <TextBlock Grid.Column="1" Text="{Binding UserName}" FontSize="16" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" FontWeight="SemiBold"/>
                     </Grid>
-                    <Grid Margin="0,0,0,10">
+                    <Separator Margin="0,0,0,5"/>
+                    <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Credits:" FontSize="16" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <TextBlock Grid.Column="1" Text="{Binding UserCredits}" FontSize="16" VerticalAlignment="Center" Foreground="LightGreen"/>
+                        <TextBlock Grid.Column="0" Text="License:" FontSize="16" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                        <TextBlock Grid.Column="1" Text="{Binding LicenseStatus}" FontSize="16" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsBuyer}" Value="True">
+                                            <Setter Property="Foreground" Value="LightGreen"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                     </Grid>
                 </StackPanel>
             </ui:Card>

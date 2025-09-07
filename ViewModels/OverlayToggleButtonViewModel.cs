@@ -1,9 +1,11 @@
-﻿using skinhunter.Services;
+﻿// ViewModels/OverlayToggleButtonViewModel.cs
+using skinhunter.Services;
 using Wpf.Ui.Controls;
 using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.ComponentModel;
+using System.Windows.Media.Animation;
 
 namespace skinhunter.ViewModels
 {
@@ -30,23 +32,17 @@ namespace skinhunter.ViewModels
         [ObservableProperty]
         private string? _statusText;
 
+        [ObservableProperty]
+        private bool _isStatusError;
+
+        [ObservableProperty]
+        private double _statusTextOpacity = 0;
+
         public IAsyncRelayCommand ToggleOverlayCommand { get; }
 
         private OverlayToggleButtonViewModel()
         {
-            if (DesignerProperties.GetIsInDesignMode(new DependencyObject()))
-            {
-                Content = "Start Overlay (Design)";
-                Icon = SymbolRegular.Play24;
-                IsUserBuyer = true;
-                StatusText = "Design Mode Status";
-                ToggleOverlayCommand = new AsyncRelayCommand(async () => await Task.CompletedTask, () => true);
-                UpdateState();
-            }
-            else
-            {
-                ToggleOverlayCommand = new AsyncRelayCommand(async () => await Task.CompletedTask, () => false);
-            }
+            ToggleOverlayCommand = new AsyncRelayCommand(async () => await Task.CompletedTask, () => false);
         }
 
         public OverlayToggleButtonViewModel(ModToolsService modToolsService, UserPreferencesService userPreferencesService) : this()
@@ -64,13 +60,29 @@ namespace skinhunter.ViewModels
             }
         }
 
-        private void OnCommandOutputReceived(string output)
+        private void OnCommandOutputReceived(string output, bool isError)
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                StatusText = output;
+                AnimateStatusText(output, isError);
             });
         }
+
+        private void AnimateStatusText(string newText, bool isError)
+        {
+            Task.Run(async () =>
+            {
+                await Application.Current.Dispatcher.InvokeAsync(() => { StatusTextOpacity = 0; });
+                await Task.Delay(210);
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    StatusText = newText;
+                    IsStatusError = isError;
+                    StatusTextOpacity = 1;
+                });
+            });
+        }
+
 
         private void UserPreferencesService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
@@ -100,7 +112,7 @@ namespace skinhunter.ViewModels
             ToggleOverlayCommand.NotifyCanExecuteChanged();
             var operationMessage = _modToolsService.IsOverlayRunning ? "Stopping Overlay..." : "Starting Overlay...";
             OperationStarted?.Invoke(operationMessage);
-            StatusText = operationMessage;
+            AnimateStatusText(operationMessage, false);
 
             try
             {
@@ -110,11 +122,19 @@ namespace skinhunter.ViewModels
                 }
                 else
                 {
-                    await _modToolsService.QueueRebuildWithInstalledSkins();
+                    // CORRECCIÓN: Usar el nombre de método correcto.
+                    await _modToolsService.QueueSyncAndRebuild();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                FileLoggerService.Log($"[OverlayToggleVM] Error executing toggle overlay: {ex.Message}");
+                AnimateStatusText("Operation failed.", true);
+            }
+            finally
+            {
+                IsOverlayBusy = false;
+                ToggleOverlayCommand.NotifyCanExecuteChanged();
             }
         }
 
@@ -123,9 +143,7 @@ namespace skinhunter.ViewModels
             Application.Current.Dispatcher.Invoke(() =>
             {
                 UpdateState();
-                IsOverlayBusy = false;
-                StatusText = isRunning ? "Overlay is running" : "Overlay is stopped";
-                ToggleOverlayCommand?.NotifyCanExecuteChanged();
+                AnimateStatusText(isRunning ? "Overlay is running" : "Overlay is stopped", false);
                 OperationCompleted?.Invoke();
 
                 _ = Task.Delay(4000).ContinueWith(_ =>
@@ -134,7 +152,7 @@ namespace skinhunter.ViewModels
                     {
                         if (StatusText == "Overlay is running" || StatusText == "Overlay is stopped")
                         {
-                            StatusText = null;
+                            AnimateStatusText(string.Empty, false);
                         }
                     });
                 });
